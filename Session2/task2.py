@@ -58,7 +58,7 @@ class ModelEvaluator:
 			ValueError('Optimizer Not Supported')
 
 
-	def train(self, trainloader, testloader):
+	def train(self, trainloader, testloader, validation=False):
 		'''
 		method for training
 		'''
@@ -79,9 +79,10 @@ class ModelEvaluator:
 				self.optimizer.step()
 				iter_ += 1
 				print('Iter-{0}, training loss{1:.2f}'.format(iter_, loss))
-				if iter_%500 == 0:
-					acc_test = self.test(testloader)
-					print('Accuracy on Test Set {:.2f}'.format(acc_test))
+				if validation:
+					if iter_%500 == 0:
+						acc_test = self.test(testloader)
+						print('Accuracy on Test Set {:.2f}'.format(acc_test))
 				loss_batch.append(loss)
 			self.epoch_loss.append(np.sum(loss_batch))    
 
