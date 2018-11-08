@@ -91,7 +91,7 @@ if __name__ == '__main__':
     k = 3
     cv = CrossValidation(k=k, batch_size=batch_size, trainset=trainset, use_gpu=True)
     accuracy_mat, best_model, best_lr, best_n_hidden = cv.gridsearchCV(parameters)
-    bestmodeleval = ModelEvaluator(best_model, epochs, best_lr, use_gpu=self.use_gpu)
+    bestmodeleval = ModelEvaluator(best_model, epochs, best_lr, use_gpu=True)
     # Visualization accuracy vs parameters
     fig, ax = plt.subplots()
     lr_ = [str(lr) for lr in parameters['lr']]
