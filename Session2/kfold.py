@@ -101,7 +101,7 @@ if __name__ == '__main__':
     texts = annotate_heatmap(im, valfmt='{x:.1f} t')
     fig.tight_layout()
     plt.show()
-    
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=True, num_workers=2)
     bestmodeleval.train(trainloader, testloader, validation=False)
     accuracy_test = bestmodeleval.test(testloader)
