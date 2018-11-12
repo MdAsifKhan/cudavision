@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import pdb
 
 class MLP(torch.nn.Module):
-	def __init__(self, n_in, n_hidden, drop_p, n_out):
+	def __init__(self, n_in, n_hidden, drop_p, n_out, act):
 		super(MLP, self).__init__()
 		'''
 		n_in: Number of Inputs
@@ -21,12 +21,17 @@ class MLP(torch.nn.Module):
 		self.n_hidden = n_hidden
 		self.p = drop_p
 		self.input_layer = nn.Linear(self.n_in, self.n_hidden[0])
-		self.input_nonlin = nn.ReLU()
+		if act =='relu':
+			self.nonlin = nn.ReLU()
+		elif act =='tanh':
+			self.nonlin = nn.Tanh()
+		elif act=='sigmoid':
+			self.nonlin = nn.Sigmoid()
 		self.hidden = nn.ModuleList()
 
 		for i in range(len(self.n_hidden)-1):
 			self.hidden.append(nn.Linear(self.n_hidden[i], self.n_hidden[i+1]))
-			self.hidden.append(nn.ReLU()) 
+			self.hidden.append(self.nonlin) 
 			self.hidden.append(nn.Dropout(p = self.p))
 		self.final_fc = nn.Linear(self.n_hidden[-1], self.n_out)
 
@@ -35,7 +40,7 @@ class MLP(torch.nn.Module):
 		'''
 		forward pass
 		'''
-		X = self.input_nonlin(self.input_layer(X))
+		X = self.nonlin(self.input_layer(X))
 		for layer in self.hidden:
 			X = layer(X)
 		return X
@@ -71,6 +76,12 @@ class ModelEvaluator:
 			self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 		elif optim=='sgd':
 			self.optimizer = optim.SGD(self.model.parameters(), lr = lr, momentum=0.9)
+		elif optim=='adadelta':
+			self.optimizer = optim.Adadelta(self.model.parameters(), lr = lr, eps=1e-6, weight_decay=0)
+		elif optim=='adagrad':
+			self.optimizer = optim.Adagrad(self.model.parameters(), lr = lr, lr_decay=1e-6, weight_decay=0)
+		elif optim=='rmsprop':
+			self.optimizer = optim.RMSprop(self.model.parameters(), lr = lr, alpha=0.995, eps=1e-7, weight_decay=0)
 		else:
 			ValueError('Optimizer Not Supported')
 
@@ -206,10 +217,10 @@ class ModelEvaluator:
 		for epoch in range(self.epochs):
 			self.train(epoch, trainloader, print_every=print_every)
 			if validation:
-				self.validation(testloader)
+				acc_ = self.validation(testloader)
 			else:
-				self.test(testloader)
-
+				acc_ = self.test(testloader)
+		return acc_
 	def plot_loss(self, validation=False):
 		'''
 		to visualize loss
@@ -221,7 +232,7 @@ class ModelEvaluator:
 			plt.plot(range(len(self.test_loss)), self.test_loss, label='Testing Loss')
 		plt.xlabel('Iteration')
 		plt.ylabel('Loss')
-		plt.show()
+		return plt
 
 if __name__ == '__main__':
 
@@ -246,10 +257,20 @@ if __name__ == '__main__':
 	n_hidden = [512, 256, 128]
 	l2 = 0
 	drop_p = 0.3
-	loss_type = 'softmax'
-	model = MLP(n_in, n_hidden, drop_p, n_out)
-	modeleval = ModelEvaluator(model, epochs, lr, loss_type=loss_type, l2=l2, use_gpu=True)
-	modeleval.evaluator(trainloader, testloader, print_every=100, validation=False)
-	modeleval.plot_loss()
+	loss_type_ = ['softmax', 'hinge']
+	optim_ = ['sgd', 'rmsprop', 'adam', 'adagrad', 'adadelta']
+	non_lin_ = ['tanh','relu', 'sigmoid']
+
+	for l_t in loss_type_:
+		for opt in optim_:
+			for nlin in non_lin_:
+				model = MLP(n_in, n_hidden, drop_p, n_out, nlin)
+				modeleval = ModelEvaluator(model, epochs, lr, loss_type=l_t, l2=l2, use_gpu=True, optim=opt)
+				acc_ = modeleval.evaluator(trainloader, testloader, print_every=100, validation=False)
+				modelname = 'model_loss_{}_optimizer{}_nonlin_{}'.format(l_t, opt, nlin)
+				print('Accuracy of {0} is {1:.2f}'.format(modelname, acc_))
+				torch.save(modeleval.model.state_dict(), modelname)
+				plt = modeleval.plot_loss()
+				plt.savefig('train_test_loss_losstype: {0}, optim{1}, non_lin{2}'.format())
 	#accuracy_test = modeleval.test(testloader)
 	#print('Accuracy of model on test set {0:.2f}'.format(accuracy_test))
