@@ -61,16 +61,12 @@ class CrossValidation:
                     
                     model = LogisticRegression(n_in, n_hidden, n_out)
                     modeleval = ModelEvaluator(model, epochs, lr, use_gpu=self.use_gpu)
-                    modeleval.train(trainloader, validloader, validation=True)
-                    #modeleval.plot_loss()
-                    accuracy_valid = modeleval.test(validloader)
-                    print('Accuracy of model on validation set {0:.2f}'.format(accuracy_valid))
+                    accuracy_valid = modeleval.evaluator(trainloader, validloader, print_every=100, validation=True)
                     fold_accuracy.append(accuracy_valid)
                     i += 1
                 mean_acc = np.mean(fold_accuracy)
                 if mean_acc > np.max(accuracy_mat):
                     best_model, best_lr, best_n_hidden = copy.deepcopy(model), lr, n_hidden
-                    # bestmodeleval = copy.deepcopy(modeleval)
                 accuracy_mat[ii, jj] = np.mean(fold_accuracy)
         return accuracy_mat, best_model, best_lr, best_n_hidden
 
@@ -83,7 +79,7 @@ if __name__ == '__main__':
     n_in = np.prod(trainset[0][0].numpy().shape)
     n_out = len(classes)
     batch_size = 100
-    epochs = 1
+    epochs = 10
 
     # Number of Parameters
     parameters = {'lr':[0.00001, 0.0001, 0.001, 0.01], 'n_hidden': [512, 256, 128]}
@@ -101,8 +97,10 @@ if __name__ == '__main__':
     texts = annotate_heatmap(im, valfmt='{x:.1f} t')
     fig.tight_layout()
     plt.show()
+
+    # Train and Test with Best Model
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=True, num_workers=2)
-    bestmodeleval.train(trainloader, testloader, validation=False)
-    accuracy_test = bestmodeleval.test(testloader)
+    accuracy_test = bestmodeleval.evaluator(trainloader, testloader, print_every=100, validation=False)
+    modeleval.plot_loss()    
     print('Accuracy of best model on test set with lr= {0:.2f}, hidden units= {1:.2f}, is {2:.2f}'.format(best_lr, best_n_hidden, accuracy_test))

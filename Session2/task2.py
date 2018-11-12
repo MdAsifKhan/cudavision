@@ -6,6 +6,7 @@ import numpy as np
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 from matplotlib import pyplot as plt
+import pdb
 
 class LogisticRegression(torch.nn.Module):
 	def __init__(self, n_in, n_hidden, n_out):
@@ -42,7 +43,8 @@ class ModelEvaluator:
 		self.lr = lr
 		self.model = model
 		self.use_gpu = use_gpu
-		self.epoch_loss = []
+		self.train_loss = []
+		self.test_loss = []
 		if self.use_gpu:
 			self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 			
@@ -58,60 +60,100 @@ class ModelEvaluator:
 			ValueError('Optimizer Not Supported')
 
 
-	def train(self, trainloader, testloader, validation=False):
+	def train(self, epoch, trainloader, print_every=100):
 		'''
 		method for training
 		'''
-		iter_ = 0
-		for epoch in range(self.epochs):
-			print('Epoch-{}'.format(epoch+1))
-			print('-----------------')
-			loss_batch = []
-			for train_data, train_labels in trainloader:
-				if self.use_gpu and self.device == 'cuda:0':
-					train_data, train_labels = train_data.to(self.device), train_labels.to(self.device)
-				train_data = train_data.reshape(-1, 32*32*3)
-				train_data = train_data / 255
-				train_preds = self.model.forward(train_data)
-				loss = self.model.loss(train_preds, train_labels)
-				self.optimizer.zero_grad()
-				loss.backward()
-				self.optimizer.step()
-				iter_ += 1
-				print('Iter-{0}, training loss{1:.2f}'.format(iter_, loss))
-				if validation:
-					if iter_%500 == 0:
-						acc_test = self.test(testloader)
-						print('Accuracy on Test Set {:.2f}'.format(acc_test))
-				loss_batch.append(loss)
-			self.epoch_loss.append(np.sum(loss_batch))    
+		loss_batch = 0
+		for b_idx, (train_data, train_labels) in enumerate(trainloader):
+			if self.use_gpu and self.device == 'cuda:0':
+				train_data, train_labels = train_data.to(self.device), train_labels.to(self.device)
+			train_data = train_data.reshape(-1, 32*32*3)
+			# Scale Images
+			train_data = train_data / 255
+			train_preds = self.model.forward(train_data)
+			self.optimizer.zero_grad()
+			loss = self.model.loss(train_preds, train_labels)
+			loss.backward()
+			self.optimizer.step()
+			if b_idx%print_every == 0:
+				print('Train Epoch: {0} [{1}/{2} ({3:.2f}%)]\t Loss {4:.6f}'.
+					format(epoch, b_idx*len(train_data), len(trainloader.dataset), 
+						100.*b_idx/len(trainloader), loss))
+			loss_batch += loss
+		loss_batch /= len(trainloader)
+		self.train_loss.append(loss_batch)    
 
-	def test(self, testloader):
+	def validation(self, valloader):
 		'''
 		method for testing
 		'''
-		correct_ = 0
-		total_ = 0
+		correct_, total_ = 0, 0
 		with torch.no_grad():
+			loss = 0
+			for val_data, val_labels in valloader:
+				if self.use_gpu and self.device == 'cuda:0':
+					val_data, val_labels = test_data.to(self.device), val_labels.to(self.device)
+				val_data = val_data.reshape(-1, 32*32*3)
+				val_data = val_data / 255
+				val_preds = self.model.forward(val_data)
+				loss += self.model.loss(val_preds, val_labels)
+				_, val_pred_labels = torch.max(val_preds.data, 1)
+				total_ += val_labels.size(0)
+				correct_ += (val_pred_labels.cpu() == val_labels.cpu()).sum()
+			
+			loss /= len(valloader)
+			self.val_loss.append(loss)
+			accuracy_val = (100.0*correct_/total_)
+			print('Validation Loss {1:.2f} Accuracy on validation set {2:.2f}'.format(loss, accuracy_val))
+			return accuracy_val
+
+
+	def test(self, epoch, testloader):
+		'''
+		method for testing
+		'''
+		correct_, total_ = 0, 0
+		with torch.no_grad():
+			loss = 0
 			for test_data, test_labels in testloader:
 				if self.use_gpu and self.device == 'cuda:0':
 					test_data, test_labels = test_data.to(self.device), test_labels.to(self.device)
 				test_data = test_data.reshape(-1, 32*32*3)
 				test_data = test_data / 255
 				test_preds = self.model.forward(test_data)
+				loss += self.model.loss(test_preds, test_labels)
 				_, test_pred_labels = torch.max(test_preds.data, 1)
 				total_ += test_labels.size(0)
-				correct_ += (test_pred_labels.cpu() == test_labels.cpu()).sum()
-				accuracy_test = (100*correct_/total_)
-			return accuracy_test
+				correct_ += (test_pred_labels.cpu() == test_labels.cpu()).sum().item()
+			
+			loss /= len(testloader)
+			self.test_loss.append(loss)
+		accuracy_test = (100.0*correct_/total_)
+		print('Accuracy of model on test set {0:.2f}'.format(accuracy_test))
+		return accuracy_test
 	
-	def plot_loss(self):
+	def evaluator(self, trainloader, testloader, print_every=100, validation=False):
+		for epoch in range(self.epochs):
+			self.train(epoch, trainloader, print_every=print_every)
+			if validation:
+				acc_ = self.validation(testloader)
+			else:
+				acc_ =  self.test(testloader)
+		return acc_
+	def plot_loss(self, validation=False):
 		'''
 		to visualize loss
 		'''
-		plt.plot(range(len(self.epoch_loss)), self.epoch_loss)
+		plt.plot(range(len(self.train_loss)), self.train_loss, label='Training Loss')
+		if validation:
+			plt.plot(range(len(self.val_loss)), self.val_loss, label='Testing Loss')
+		else:
+			plt.plot(range(len(self.test_loss)), self.test_loss, label='Testing Loss')
 		plt.xlabel('Iteration')
 		plt.ylabel('Loss')
+		plt.legend(loc='upper right', fontsize=8)
+		plt.savefig('epoch_vs_loss_.png')
 		plt.show()
 
 if __name__ == '__main__':
@@ -128,7 +170,7 @@ if __name__ == '__main__':
 	# Hyperparameters
 	lr = 0.001
 	n_hidden = 512
-	epochs = 100
+	epochs = 30
 
 	# Data Loader
 	trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
@@ -137,7 +179,5 @@ if __name__ == '__main__':
 	# Model
 	model = LogisticRegression(n_in, n_hidden, n_out)
 	modeleval = ModelEvaluator(model, epochs, lr, use_gpu=True)
-	modeleval.train(trainloader, testloader)
+	modeleval.evaluator(trainloader, testloader, print_every=100, validation=False)
 	modeleval.plot_loss()
-	accuracy_test = modeleval.test(testloader)
-	print('Accuracy of model on test set {0:.2f}'.format(accuracy_test))
