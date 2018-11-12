@@ -93,7 +93,7 @@ class ModelEvaluator:
 		hinge_loss[np.arange(len(scores)),y_label] = 0
 		hinge_loss = hinge_loss.sum()
 
-		return loss
+		return hinge_loss
 
 	def l2_regularization(self, loss, lam):
 		l2 = 0
@@ -244,7 +244,7 @@ if __name__ == '__main__':
 
 	# Model
 	n_hidden = [512, 256, 128]
-	l2 = False
+	l2 = 0
 	drop_p = 0.3
 	loss_type = 'softmax'
 	model = MLP(n_in, n_hidden, drop_p, n_out)
