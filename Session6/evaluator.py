@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from matplotlib import pyplot as plt
-
+import os as os
 
 class AutoEncoderEvaluator:
     def __init__(self, encoder, decoder, epochs, lr, batch_size, l2=0.0 , add_noise=False, use_gpu=False, optim='adam'):
@@ -108,6 +108,17 @@ class AutoEncoderEvaluator:
                              len(trainloader.dataset),
                              100. * b_idx / len(trainloader), loss))
 
+                save_model = {'epoch': epoch, 
+                                'state_dict_encoder': self.encoder.state_dict(),
+                                'state_dict_decoder': self.decoder.state_dict(), 
+                                    'optimizer': self.optimizer.state_dict()}
+                
+                model_name = 'AutoEncoder_lr_{}_opt_{}'.format(self.lr, self.optim)
+                model_dir = '../Session6/model/' + model_name
+                
+                if self.add_noise:
+                    model_dir = model_dir + '_dae'
+                torch.save(save_model, model_dir)
             loss_batch += loss.item()
         loss_batch /= len(trainloader)
         self.train_loss.append(loss_batch)
@@ -173,6 +184,7 @@ class ModelEvaluator:
         self.use_gpu = use_gpu
         self.train_loss = []
         self.test_loss = []
+        self.optim = optim
 
         if self.use_gpu:
             self.device = torch.device(
@@ -243,12 +255,21 @@ class ModelEvaluator:
                       format(epoch, b_idx * len(train_data),
                              len(trainloader.dataset),
                              100. * b_idx / len(trainloader), loss))
+                
+                save_model = {'epoch': epoch, 
+                                'state_dict': self.model.state_dict(), 
+                                    'optimizer': self.optimizer.state_dict()}
+
+                model_name = 'model_lr_{}_opt_{}'.format(self.lr, self.optim)
+                model_dir = '../Session6/model/' + model_name
+                if noise:
+                    model_dir = model_dir + '_dae'
+                torch.save(save_model, model_dir)
 
             loss_batch += loss.item()
         loss_batch /= len(trainloader)
         self.train_loss.append(loss_batch)
-
-
+        
 
     def evaluator(self, encoder, trainloader, testloader, noise=False, print_every=1000):
         for epoch in range(self.epochs):

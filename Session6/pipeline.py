@@ -8,6 +8,18 @@ from model import Encoder, Decoder, LogisticRegression
 from evaluator import ModelEvaluator, AutoEncoderEvaluator
 
 
+def load_encoder(epoch=1, encoder_name):
+	model_dir = '../Session6/model/' + encoder_name
+	checkpoint = torch.load(model_dir)
+	checkpoint = checkpoint['state_dict_encoder']
+	return checkpoint
+
+def load_model(epoch=1, model_name):
+	model_dir = '../Session6/model/' + model_name
+	checkpoint = torch.load(model_dir)
+	checkpoint = checkpoint['state_dict']
+	return checkpoint
+
 cudnn.benchmark = True
 
 
@@ -37,8 +49,8 @@ add_noise = False
 AEeval = AutoEncoderEvaluator(encoder, decoder, epochs, lr, batch_size=batch_size, l2=l2, add_noise=add_noise, use_gpu=True, optim=optim)
 AEeval.evaluator(trainloader, testloader, print_every=100)
 
-modelname = 'model_learning_rate_{}_optimizer_{}_'.format(lr, opt)
-torch.save([modeleval.encoder.state_dict(), modeleval.decoder.state_dict()], modelname)
+#modelname = 'ae_learning_rate_{}_optimizer_{}_'.format(lr, opt)
+#torch.save([modeleval.encoder.state_dict(), modeleval.decoder.state_dict()], modelname)
 
 #
 n_in = 32768  # 512x8x8
