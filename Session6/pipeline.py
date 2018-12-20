@@ -8,13 +8,13 @@ from model import Encoder, Decoder, LogisticRegression
 from evaluator import ModelEvaluator, AutoEncoderEvaluator
 
 
-def load_encoder(encoder_name, epoch=1):
+def load_encoder(encoder_name):
 	model_dir = '../Session6/model/' + encoder_name
 	checkpoint = torch.load(model_dir)
 	checkpoint = checkpoint['state_dict_encoder']
 	return checkpoint
 
-def load_model(model_name, epoch=1):
+def load_model(model_name):
 	model_dir = '../Session6/model/' + model_name
 	checkpoint = torch.load(model_dir)
 	checkpoint = checkpoint['state_dict']

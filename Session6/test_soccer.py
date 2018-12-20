@@ -63,8 +63,8 @@ if __name__ == '__main__':
 	encoder_epoch = 10
 	lr = 0.001
 	optim = 'adam'
-	encoder_name = 'AutoEncoder_lr_{}_opt_{}'.format(lr, optim)
-	encoder.load_state_dict(load_encoder(encoder_name, epoch=encoder_epoch))
+	encoder_name = 'AutoEncoder_lr_{}_opt_{}_epoch_{}'.format(lr, optim, encoder_epoch)
+	encoder.load_state_dict(load_encoder(encoder_name))
 
 	n_in = 32768  # 512x8x8
 	n_hidden = 512

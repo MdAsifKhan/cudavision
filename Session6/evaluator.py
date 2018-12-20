@@ -114,7 +114,7 @@ class AutoEncoderEvaluator:
                                 'state_dict_decoder': self.decoder.state_dict(), 
                                     'optimizer': self.optimizer.state_dict()}
                 
-                model_name = 'AutoEncoder_lr_{}_opt_{}'.format(self.lr, self.optim)
+                model_name = 'AutoEncoder_lr_{}_opt_{}_epoch_{}'.format(self.lr, self.optim, epoch)
                 model_dir = '../Session6/model/' + model_name
                 
                 if self.add_noise:
@@ -261,7 +261,7 @@ class ModelEvaluator:
                                 'state_dict': self.model.state_dict(), 
                                     'optimizer': self.optimizer.state_dict()}
 
-                model_name = 'model_lr_{}_opt_{}'.format(self.lr, self.optim)
+                model_name = 'model_lr_{}_opt_{}_epoch_{}'.format(self.lr, self.optim, epoch)
                 model_dir = '../Session6/model/' + model_name
                 if noise:
                     model_dir = model_dir + '_dae'
