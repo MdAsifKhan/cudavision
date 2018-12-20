@@ -76,27 +76,3 @@ class Decoder(nn.Module):
         out = self.layer1(out)
         out = self.layer2(out)
         return out
-
-
-
-class LogisticRegression(torch.nn.Module):
-    def __init__(self, n_in, n_hidden, n_out):
-        super(LogisticRegression, self).__init__()
-        '''
-        n_in: Number of Inputs
-        n_hidden: Number of Hidden Units
-        n_out: Number of Output Units
-        '''
-        self.n_in = n_in
-        self.n_out = n_out
-        self.n_hidden = n_hidden
-        self.fc1 = nn.Linear(self.n_in, self.n_hidden)
-        self.fc2 = nn.Linear(self.n_hidden, self.n_out)
-        self.nonlin = nn.ReLU()
-        self.loss = torch.nn.CrossEntropyLoss()
-
-    def forward(self, X):
-        '''
-        forward pass
-        '''
-        return self.fc2(self.nonlin(self.fc1(X)))
