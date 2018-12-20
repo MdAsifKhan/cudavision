@@ -5,10 +5,14 @@ import torch
 import numpy as np
 from soccer_dataset import SoccerDataset
 
-from model import Encoder, Decoder, LogisticRegression
-from evaluator import ModelEvaluator
+from model import Encoder, Decoder
 cudnn.benchmark = True
 
+def load_model(model_name, key='state_dict_encoder'):
+    model_dir = '../Session6/model/' + model_name
+    checkpoint = torch.load(model_dir)
+    checkpoint = checkpoint[key]
+    return checkpoint
 
 def test_img(path, encoder, model, model_epoch, encoder_epoch):
     img = Image.open(path)
@@ -34,53 +38,52 @@ def test_img(path, encoder, model, model_epoch, encoder_epoch):
         print(str(output))
         print('prediction: %s' % ['not soccer', 'soccer'][idx])
 
-def train_soccer(epochs, model, modeleval, dataloader):
+
+def get_features_soccer(encoder, batch_size=100):
 	transform = transforms.Compose([
-		transforms.RandomResizedCrop(32),
-		transforms.RandomHorizontalFlip(),
-		transforms.ToTensor(),
-		transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+					transforms.Resize(64),
+					transforms.CenterCrop(32),
+					transforms.ToTensor(),
+				transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
-	for epoch in range(epochs):
-    	model.train()
+	dataset = SoccerDataset(transform=transform)
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=3)
+	n_in = 32768  # 512x8x8
+	train_features_ = np.zeros([len(dataset), n_in]) # Number of Samples by features
+	train_labels_ = np.zeros(len(dataset))
+	for b_idx, (train_data, train_labels) in tqdm(enumerate(dataloader)):
+		latent_repr = encoder.forward(train_data)
+		train_features_[b_idx: b_idx+batch_size,:] = latent_repr.detach().cpu().numpy()
+		train_labels_[b_idx: b_idx+batch_size] = train_labels.detach().cpu().numpy()
 
-    	modeleval.train(encoder, epoch, dataloader, noise=False, print_every=100)
-
-def run_trainer(dataloader, encoder, model, batch_size, epochs, lr=0.01, l2=0.0, use_gpu=True, optim='adam'):
-
-	modeleval = ModelEvaluator(model, epochs, lr, l2=l2, use_gpu=use_gpu, optim=optim)
-	
-	modeleval.train(encoder, epoch, dataloader, noise=False, print_every=100)
-	train_soccer(epochs, model, modeleval, dataloader)
-
+	return train_features_, train_labels_
 
 if __name__ == '__main__':
 
 
-	batch_size = 50
+	batch_size = 100
+	lr = 0.001
+
+	optim = 'adam'
+	model_epoch = 5
+	use_gpu= True
+	cudnn.benchmark = True
+	add_noise = False
+	if add_noise:
+		model_name = 'AutoEncoder_lr_{}_opt_{}_epoch_{}_dae'.format(lr, optim, model_epoch)
+	model_name = 'AutoEncoder_lr_{}_opt_{}_epoch_{}'.format(lr, optim, model_epoch)
 
 	encoder = Encoder(batch_size=batch_size)
-	encoder_epoch = 10
-	lr = 0.001
-	optim = 'adam'
-	encoder_name = 'AutoEncoder_lr_{}_opt_{}_epoch_{}'.format(lr, optim, encoder_epoch)
-	encoder.load_state_dict(load_encoder(encoder_name))
+	decoder = Decoder(batch_size=batch_size)
+
+	encoder.load_state_dict(load_model(model_name, key='state_dict_encoder'))
+	decoder.load_state_dict(load_model(model_name, key='state_dict_decoder'))
 
 	n_in = 32768  # 512x8x8
-	n_hidden = 512
-	n_out = 10
-	epochs = 20
-	lr = 0.01
+	
 
-	model = LogisticRegression(n_in, n_hidden, n_out)
-	dataset = SoccerDataset(transform=transform)
-	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=3)
-	run_trainer(dataloader, encoder, model, batch_size, epochs, lr)
+	train_features_, train_labels_ = get_features_soccer(encoder)
 
-
-	#model = LogisticRegression(n_in, n_hidden, n_out)
-	#model_epoch = 10
-	#model.load_state_dict(load_model(epoch=model_epoch))
 
 	test_path = 'Session6/SoccerData/test'
 	img1_path = test_path + '/test1.jpg'
