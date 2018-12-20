@@ -226,7 +226,7 @@ class ModelEvaluator:
         '''
         method for training
         '''
-        model.train()
+        self.model.train()
         loss_batch = 0
         if epoch % 10 == 0 and epoch > 0:
             adjust_lr(step=0.1)

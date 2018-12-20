@@ -30,7 +30,7 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 
 
 # Set Hyperparameters
-epochs = 10
+epochs = 20
 batch_size = 50
 lr = 0.001
 
@@ -63,6 +63,6 @@ l2 = 0.0
 encoder = AEeval.encoder
 model = LogisticRegression(n_in, n_hidden, n_out)
 modeleval = ModelEvaluator(model, model_epochs, model_lr, l2=l2, use_gpu=True, optim='adam')
-acc_ = modeleval.evaluator(encoder, trainloader, testloader, noise=add_noise, print_every=100, validation=False)
+acc_ = modeleval.evaluator(encoder, trainloader, testloader, noise=add_noise, print_every=100)
 
 print('Accuracy on test set {.2f}'.format(acc_))
