@@ -49,13 +49,16 @@ def get_features_soccer(encoder, batch_size=100):
 	dataset = SoccerDataset(transform=transform)
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=3)
 	n_in = 32768  # 512x8x8
-	train_features_ = np.zeros([len(dataset), n_in]) # Number of Samples by features
-	train_labels_ = np.zeros(len(dataset))
+	train_features_ = np.zeros([len(trainloader), batch_size, n_in])
+	train_labels_ = np.zeros([len(trainloader), batch_size])
 	for b_idx, (train_data, train_labels) in tqdm(enumerate(dataloader)):
 		latent_repr = encoder.forward(train_data)
-		train_features_[b_idx: b_idx+batch_size,:] = latent_repr.detach().cpu().numpy()
-		train_labels_[b_idx: b_idx+batch_size] = train_labels.detach().cpu().numpy()
-
+		train_features_[b_idx,:,:] = latent_repr.detach().cpu().numpy()
+		train_labels_[b_idx,:] = train_labels.detach().cpu().numpy()
+	
+	shape = train_features_.shape
+	train_features_ = train_features_.reshape(shape[0]*shape[1], shape[2])
+	train_labels_ = train_labels_.reshape(shape[0]*shape[1])
 	return train_features_, train_labels_
 
 if __name__ == '__main__':
