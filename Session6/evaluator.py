@@ -26,6 +26,7 @@ class AutoEncoderEvaluator:
         self.accuracy_test_clf = []
         self.add_noise = add_noise
         self.loss = nn.MSELoss()
+        self.optim = optim
         if self.use_gpu:
             self.device = torch.device(
                 'cuda:0' if torch.cuda.is_available() else 'cpu')
