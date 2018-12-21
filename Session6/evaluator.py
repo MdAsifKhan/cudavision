@@ -28,15 +28,8 @@ class AutoEncoderEvaluator:
         self.loss = nn.MSELoss()
         self.optim = optim
         if self.use_gpu:
-            self.device = torch.device(
-                'cuda:0' if torch.cuda.is_available() else 'cpu')
-
-            if str(self.device) == 'cuda:0':
-                if torch.cuda.device_count() > 1:
-                    self.encoder = nn.DataParallel(encoder)
-                    self.decoder = nn.DataParallel(decoder)
-                self.encoder.to(self.device)
-                self.decoder.to(self.device)
+            self.encoder.cuda()
+            self.decoder.cuda()
 
         parameters = list(self.encoder.parameters())+ list(self.decoder.parameters())
         if optim == 'adam':
@@ -82,14 +75,15 @@ class AutoEncoderEvaluator:
             self.adjust_lr(step=0.1)
         for b_idx, (train_data, train_labels) in enumerate(trainloader):
             if self.add_noise:
-                train_data_n = torch.mul(train_data+0.25, 0.1*torch.rand(batch_size, 3, 32, 32))
+                train_data_n = torch.mul(train_data+0.25, 0.1*torch.rand(self.batch_size, 3, 32, 32))
             
-            if self.use_gpu and str(self.device) == 'cuda:0':
+            if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
 
             # Forward Pass
             if self.add_noise:
+                train_data_n = train_data_n.cuda(non_blocking=True)
                 latent_repr = self.encoder.forward(train_data_n)
             else:
                 latent_repr = self.encoder.forward(train_data)
@@ -123,11 +117,11 @@ class AutoEncoderEvaluator:
             for test_data, test_labels in testloader:
                 if self.add_noise:
                     test_data_n = torch.mul(test_data+0.25, 0.1 * torch.rand(self.batch_size, 3, 32, 32))
-                if self.use_gpu and str(self.device) == 'cuda:0':
-                    test_data, test_labels = test_data.to(
-                        self.device), test_labels.to(self.device)
+                if self.use_gpu:
+                    test_data, test_labels = test_data.cuda(), test_labels.cuda()
 
                 if self.add_noise:
+                    test_data_n = test_data_n.cuda()
                     latent_repr = self.encoder.forward(test_data_n)
                 else:
                     latent_repr = self.encoder.forward(test_data)
@@ -165,3 +159,97 @@ class AutoEncoderEvaluator:
         plt.ylabel('Loss')
         plt.legend()
         plt.savefig('loss_evaluation')
+
+class ModelEvaluator:
+    def __init__(self, model, epochs, lr, use_gpu=False, optim='adam'):
+        '''
+        model: instance of pytorch model class
+        epochs: number of training epochs
+        lr: learning rate
+        use_gpu: to use gpu
+        optim: optimizer used for training, SGD or adam
+        '''
+        self.epochs = epochs
+        self.lr = lr
+        self.model = model
+        self.use_gpu = use_gpu
+        self.train_loss = []
+        self.test_loss = []
+        self.val_loss = []
+        if self.use_gpu:
+            self.model = self.model.cuda()
+        if optim=='adam':
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+        elif optim=='sgd':
+            self.optimizer = optim.SGD(self.model.parameters(), lr = lr, momentum=0.9)
+        else:
+            ValueError('Optimizer Not Supported')
+
+
+    def train(self, encoder, epoch, trainloader, print_every=100):
+        '''
+        method for training
+        '''
+        self.model.train()
+        loss_batch = 0
+        for b_idx, (train_data, train_labels) in enumerate(trainloader):
+            if self.use_gpu:
+                train_data, train_labels = train_data.cuda(), train_labels.cuda()
+            # Scale Images
+            latent_repr = encoder.forward(train_data)
+            train_preds = self.model.forward(latent_repr)
+            self.optimizer.zero_grad()
+            loss = self.model.loss(train_preds, train_labels)
+            loss.backward()
+            self.optimizer.step()
+            if b_idx%print_every == 0:
+                print('Train Epoch: {0} [{1}/{2} ({3:.2f}%)]\t Loss {4:.6f}'.
+                    format(epoch, b_idx*len(train_data), len(trainloader.dataset), 
+                        100.*b_idx/len(trainloader), loss))
+            loss_batch += loss
+        loss_batch /= len(trainloader)
+        self.train_loss.append(loss_batch)
+
+    def test(self, encoder, testloader):
+        '''
+        method for testing
+        '''
+        self.model.eval()
+        correct_, total_ = 0, 0
+        with torch.no_grad():
+            loss = 0
+            for test_data, test_labels in testloader:
+                if self.use_gpu:
+                    test_data, test_labels = test_data.cuda(), test_labels.cuda()
+                
+                latent_repr = encoder.forward(test_data)
+                
+                test_preds = self.model.forward(latent_repr)
+                loss += self.model.loss(test_preds, test_labels)
+                _, test_pred_labels = torch.max(test_preds.data, 1)
+                total_ += test_labels.size(0)
+                correct_ += (test_pred_labels.cpu() == test_labels.cpu()).sum()
+
+            loss /= len(testloader)
+            self.test_loss.append(loss)
+            accuracy_test = (100.0*correct_/total_)
+            print('Accuracy of model on test set {0:.2f}'.format(accuracy_test))
+            return accuracy_test
+
+    def evaluator(self, encoder, trainloader, testloader, print_every=100):
+        for epoch in range(self.epochs):
+            self.train(encoder, epoch, trainloader, print_every=print_every)
+            acc_ =  self.test(encoder, testloader)
+        return acc_
+    
+    def plot_loss(self):
+        '''
+        to visualize loss
+        '''
+        plt.plot(range(len(self.train_loss)), self.train_loss, label='Training Loss')
+        plt.plot(range(len(self.test_loss)), self.test_loss, label='Testing Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend(loc='upper right', fontsize=8)
+        plt.savefig('epoch_vs_loss_.png')
+        plt.show()

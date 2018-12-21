@@ -4,8 +4,8 @@ import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 
 
-from model import Encoder, Decoder, LogisticRegression
-from evaluator import ModelEvaluator, AutoEncoderEvaluator
+from model import Encoder, Decoder
+from evaluator import AutoEncoderEvaluator
 
 
 def load_encoder(encoder_name):
@@ -48,21 +48,3 @@ decoder = Decoder(batch_size=batch_size)
 add_noise = False
 AEeval = AutoEncoderEvaluator(encoder, decoder, epochs, lr, batch_size=batch_size, l2=l2, add_noise=add_noise, use_gpu=True, optim=optim)
 AEeval.evaluator(trainloader, testloader, print_every=100)
-
-#modelname = 'ae_learning_rate_{}_optimizer_{}_'.format(lr, opt)
-#torch.save([modeleval.encoder.state_dict(), modeleval.decoder.state_dict()], modelname)
-
-#
-n_in = 32768  # 512x8x8
-n_hidden = 512
-n_out = 10
-model_epochs = 20
-model_lr = 0.001
-l2 = 0.0
-#train classifier
-encoder = AEeval.encoder
-model = LogisticRegression(n_in, n_hidden, n_out)
-modeleval = ModelEvaluator(model, model_epochs, model_lr, l2=l2, use_gpu=True, optim='adam')
-acc_ = modeleval.evaluator(encoder, trainloader, testloader, noise=add_noise, print_every=100)
-
-print('Accuracy on test set {.2f}'.format(acc_))

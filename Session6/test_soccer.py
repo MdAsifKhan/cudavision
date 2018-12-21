@@ -61,6 +61,40 @@ def get_features_soccer(encoder, batch_size=100):
 	train_labels_ = train_labels_.reshape(shape[0]*shape[1])
 	return train_features_, train_labels_
 
+def train_clf_soccer(encoder, batch_size=100, use_gpu=True):
+	transform = transforms.Compose([
+					transforms.Resize(64),
+					transforms.CenterCrop(32),
+					transforms.ToTensor(),
+				transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+
+	dataset = SoccerDataset(transform=transform)
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=3)
+
+	n_in = 8192  # 128x8x8
+	train_loss = []
+	for epoch in range(epochs):
+		loss_match = 0
+		for b_idx, (train_data, train_labels) in enumerate(dataloader):
+			if use_gpu:
+				train_data, train_labels = train_data.cuda(), train_labels.cuda()
+			# Scale Images
+			latent_repr = encoder.forward(train_data)
+			train_preds = model.forward(latent_repr)
+			optimizer.zero_grad()
+			loss = model.loss(train_preds, train_labels)
+			loss.backward()
+			optimizer.step()
+			if b_idx%print_every == 0:
+				print('Train Epoch: {0} [{1}/{2} ({3:.2f}%)]\t Loss {4:.6f}'.
+					format(epoch, b_idx*len(train_data), len(trainloader.dataset), 
+						100.*b_idx/len(trainloader), loss))
+			loss_batch += loss
+		loss_batch /= len(trainloader)
+		train_loss.append(loss_batch)
+
+	return model, train_loss
+
 if __name__ == '__main__':
 
 
@@ -70,7 +104,6 @@ if __name__ == '__main__':
 	optim = 'adam'
 	model_epoch = 5
 	use_gpu= True
-	cudnn.benchmark = True
 	add_noise = False
 	if add_noise:
 		model_name = 'AutoEncoder_lr_{}_opt_{}_epoch_{}_dae'.format(lr, optim, model_epoch)
@@ -78,14 +111,14 @@ if __name__ == '__main__':
 
 	encoder = Encoder(batch_size=batch_size)
 	decoder = Decoder(batch_size=batch_size)
-
+	if use_gpu:
+		encoder = encoder.cuda()
+		decoder = decoder.cuda()
 	encoder.load_state_dict(load_model(model_name, key='state_dict_encoder'))
 	decoder.load_state_dict(load_model(model_name, key='state_dict_decoder'))
 
-	n_in = 32768  # 512x8x8
-	
-
-	train_features_, train_labels_ = get_features_soccer(encoder)
+	n_in = 8192  # 512x8x8
+	model, loss_train = train_clf_soccer(encoder, batch_size=100, use_gpu=True)
 
 
 	test_path = 'Session6/SoccerData/test'
