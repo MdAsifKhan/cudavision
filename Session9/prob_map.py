@@ -47,7 +47,7 @@ class ProbMap:
 		for x in range(prob_map.shape[0]):
 			for y in range(prob_map.shape[1]):
 				prob_map[x, y] = multivariate_normal.pdf([x, y], center, [2*radius, 2*radius])
-		return prob_map
+	return prob_map
 
 	def save_prob_map(self, data_file):
 		prob_maps = np.asarray(self.prob_maps, dtype='float32')
