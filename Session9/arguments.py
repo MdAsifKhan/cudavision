@@ -26,18 +26,18 @@ opt.manualSeed = 123
 opt.input_size = (640, 480)
 opt.rot_degree = 45
 if opt.data_root == '':
-	opt.data_root = '/home/asif/course-work/cudavision/Session9/SoccerData'
+	opt.data_root = '/home/local/stud/khan01/cudavision/Session9/SoccerData'
 if opt.model_root == '':
-	opt.model_root = '/home/asif/course-work/cudavision/Session9/model/'
+	opt.model_root = '/home/local/stud/khan01/cudavision/Session9/model/'
 if opt.result_root == '':
-	opt.result_root = '/home/asif/course-work/cudavision/Session9/results/'
+	opt.result_root = '/home/local/stud/khan01/cudavision/Session9/results/'
 
 
 if opt.optimizer=='adam':
-	opt.lr = 0.0002
+	opt.lr = 0.0001
 
 elif opt.optimizer=='sgd':
-	opt.lr = 0.0002
+	opt.lr = 0.0001
 	opt.mom = 0.9
 elif opt.optimizer=='adadelta':
 	opt.lr = 0.0002
@@ -53,5 +53,7 @@ else:
 	ValueError('Optimizer Not Supported')
 
 opt.l2 = 0.0
+opt.nm_epochs = 50
 opt.save_every = 5
-opt.print_every = 100
+opt.batch_size = 8
+opt.print_every = 2

@@ -5,6 +5,8 @@ import os as os
 from arguments import opt
 import pdb
 from utils import batch_iou
+import torch.nn.functional as F
+import numpy as np
 
 class ModelEvaluator:
     def __init__(self, model):
@@ -79,13 +81,14 @@ class ModelEvaluator:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
             
-            output = self.model(train_data)
-            
+            output = self.model(train_data).squeeze()
+            train_labels = train_labels.transpose(1, 2)
+            train_labels = F.pad(train_labels, pad=(3,3,3,3), mode='constant', value=0)
             threshold = 0.7*train_labels.max()
             if threshold>self.threshold:
                 self.threshold = threshold
 
-            loss = self.loss(output.squeeze(), train_labels)
+            loss = self.loss(output, train_labels)
             
             if self.l2:
                 loss = self.l2_regularization(loss, self.l2)
@@ -109,20 +112,24 @@ class ModelEvaluator:
         '''
         method for testing
         '''
-        correct_, total_ = 0, 0
+        FDR, RC, accuracy = 0, 0, 0
         with torch.no_grad():
             batch_loss = 0
             for test_data, test_labels, box_actual in testloader:
                 if self.use_gpu:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
-
                 output = self.model(test_data)
+                test_labels = test_labels.transpose(1, 2)
+                test_labels = F.pad(test_labels, pad=(3,3,3,3), mode='constant', value=0)
                 loss_ = self.loss(output, test_labels)
                 peaks_predicted = self.peak_detection(output)
-                FDR, RC, accuracy = self.report_performance_metric(box_actual.numpy(), peaks_predicted)
-                print('Epoch = {0} FDR = {1.4f} , RC {2.4f} =, accuracy = {3.4f}'.format(epoch, FDR, RC, accuracy))
+                FDR_batch, RC_batch, accuracy_batch = self.report_performance_metric(box_actual.numpy(), peaks_predicted)
+                FDR += FDR_batch
+                RC += RC_batch
+                accuracy += accuracy_batch
                 self.iter_loss_test.append(loss_)
                 batch_loss += loss_
+            print('Epoch = {0:} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(epoch, FDR/len(testloader), RC/len(testloader), accuracy/len(testloader)))
             batch_loss /= len(testloader)
             self.test_loss.append(batch_loss)
 
@@ -173,14 +180,14 @@ class ModelEvaluator:
         return model, epoch
 
     def peak_detection(self, maps):
-        maps = maps.tolist()
+        maps = maps.cpu().numpy().squeeze()
         peaks = []
         for map_ in maps:
-            peak =  np.unravel_index(np.argmax(map_, axis=None), np.shape(map_))
+            peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
             max_value = map_[peak]
             while max_value>self.threshold:
                 map_[peak] = 0
-                peak = np.unravel_index(np.argmax(map_, axis=None), np.shape(map_))
+                peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
                 max_value = map_[peak]
             peaks.append(peak)
         return  peaks
@@ -196,7 +203,6 @@ class ModelEvaluator:
         box_predicted = np.asarray(box_predicted)
 
         iou = batch_iou(box_actual, box_predicted)
-
         TP = iou>0.5
         FP = iou<=0.5
         FN = iou<=1e-5

@@ -22,7 +22,7 @@ batch_size = opt.batch_size
 if opt.dataset== 'soccer':
 	trainset = SoccerDataSet(data_path=opt.data_root + '/train_cnn', map_file= 'train_maps', 
 										transform= transforms.Compose([
-										transforms.RandomResizedCrop(opt.input_size[1]),	
+										#transforms.RandomResizedCrop(opt.input_size[1]),	
 										transforms.RandomHorizontalFlip(),	
 										transforms.RandomRotation(opt.rot_degree),
 										transforms.ColorJitter(brightness=0.4,
@@ -33,7 +33,7 @@ if opt.dataset== 'soccer':
 
 	testset = SoccerDataSet(data_path=opt.data_root +'/test_cnn', map_file='test_maps',
 										transform= transforms.Compose([
-										transforms.RandomResizedCrop(opt.input_size[1]),	
+										#transforms.RandomResizedCrop(opt.input_size[1]),	
 										transforms.RandomHorizontalFlip(),	
 										transforms.RandomRotation(opt.rot_degree),
 										transforms.ColorJitter(brightness=0.4,
