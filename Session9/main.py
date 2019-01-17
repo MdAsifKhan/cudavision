@@ -53,3 +53,4 @@ nc = 1
 model = SweatyNet1(nc)
 modeleval = ModelEvaluator(model)
 modeleval.evaluator(trainloader, testloader)
+modeleval.plot_loss()

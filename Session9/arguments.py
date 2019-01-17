@@ -30,7 +30,7 @@ if opt.data_root == '':
 if opt.model_root == '':
 	opt.model_root = '/home/local/stud/khan01/cudavision/Session9/model/'
 if opt.result_root == '':
-	opt.result_root = '/home/local/stud/khan01/cudavision/Session9/results/'
+	opt.result_root = '/home/local/stud/khan01/cudavision/Session9/results'
 
 
 if opt.optimizer=='adam':

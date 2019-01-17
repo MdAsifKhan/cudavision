@@ -73,6 +73,7 @@ class ModelEvaluator:
         '''
         method for training
         '''
+        self.model.train()
         loss_batch = 0
         if epoch % 10 == 0 and epoch > 0:
             self.adjust_lr(step=0.1)
@@ -112,6 +113,7 @@ class ModelEvaluator:
         '''
         method for testing
         '''
+        self.model.eval()
         FDR, RC, accuracy = 0, 0, 0
         with torch.no_grad():
             batch_loss = 0
@@ -150,7 +152,7 @@ class ModelEvaluator:
                 model_dir = opt.model_root + '/' + model_name
                 torch.save(save_model, model_dir)
 
-    def plot_loss_epoch(self):
+    def plot_loss(self):
         '''
         to visualize loss
         '''
@@ -161,7 +163,7 @@ class ModelEvaluator:
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.legend()
-        plt.savefig('{}/loss_evaluation epoch'.format(opt.result_dir))
+        plt.savefig('{}/loss_evaluation_epoch'.format(opt.result_root))
         plt.cla()
         plt.clf()
         plt.plot(range(len(self.iter_loss_train)), self.iter_loss_train,
@@ -171,7 +173,7 @@ class ModelEvaluator:
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.legend()
-        plt.savefig('{}/loss_evaluation iter'.format(opt.result_dir))
+        plt.savefig('{}/loss_evaluation_iter'.format(opt.result_root))
     
     def load_model(self, model_name):
         model_dir = opt.model_root + '/' + model_name
