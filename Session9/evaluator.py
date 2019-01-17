@@ -198,7 +198,7 @@ class ModelEvaluator:
         iou = batch_iou(box_actual, box_predicted)
 
         TP = iou>0.5
-        FP = iou=<0.5
+        FP = iou<=0.5
         FN = iou<=1e-5
 
         accuracy = TP.sum()/len(TP)

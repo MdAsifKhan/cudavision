@@ -7,6 +7,7 @@ from torchvision import transforms
 from scipy.stats import multivariate_normal
 from PIL import Image
 import torch
+import h5py
 
 class SoccerDataSet:
 	'''
