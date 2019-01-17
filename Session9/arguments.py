@@ -53,3 +53,5 @@ else:
 	ValueError('Optimizer Not Supported')
 
 opt.l2 = 0.0
+opt.save_every = 5
+opt.print_every = 100

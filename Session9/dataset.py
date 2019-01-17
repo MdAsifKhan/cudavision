@@ -19,6 +19,7 @@ class SoccerDataSet:
 		with h5py.File(self.dataroot + '/' + self.map_file,'r') as hf:
 			 self.targets = hf.get('prob_maps').tolist()
 			 self.filenames = hf.get('filenames').tolist()
+			 self.box = hf.get('ros').tolist()
 
 		self.images, self.targets = [], []
 		for filename in self.filenames:
@@ -39,6 +40,6 @@ class SoccerDataSet:
 
 		name = img_name[:-4]
 		idt = self.filenames.index(name)
-		prob_ = self.targets[idt]		
-
-		return img, prob_
+		prob_ = self.targets[idt]
+		coord_ = self.box[idt]
+		return img, prob_, coord_

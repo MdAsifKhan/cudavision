@@ -49,7 +49,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, s
 testloader = torch.utils.data.DataLoader(testset, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers)
 import pdb
 # Pytorch Cross Entropy Loss
-nc = 2
+nc = 1
 model = SweatyNet1(nc)
 modeleval = ModelEvaluator(model)
 modeleval.evaluator(trainloader, testloader)

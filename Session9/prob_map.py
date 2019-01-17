@@ -16,6 +16,7 @@ class ProbMap:
 		self.dataroot = dataroot
 		self.prob_maps = []
 		self.image_name = []
+		self.box = []
 
 	def create_prob_map(self):
 		for filename in os.listdir(self.dataroot):
@@ -28,6 +29,7 @@ class ProbMap:
 					tree['annotation']['object'] = [tree['annotation']['object']]
 			
 				prob_map = np.zeros([160, 120], dtype='float32')
+				box = np.array([0, 0, 0, 0])
 				for object_ in tree['annotation']['object']:
 					if object_['name']=='ball':
 						bndbox = object_['bndbox']
@@ -35,9 +37,11 @@ class ProbMap:
 						xmax, ymax = int(bndbox['xmax'])/4, int(bndbox['ymax'])/4
 						center = [(xmax+xmin)/2, (ymax+ymin)/2]
 						radius = min((xmax-xmin)/2, (ymax-ymin)/2)
-						prob_map = prob_map(prob_map, center, radius)	
+						prob_map = prob_map(prob_map, center, radius)
+						box = np.array([xmin, ymin, xmax, ymax])	
 				self.prob_maps.append(prob_map)
 				self.image_name.append(name)
+				self.box.append(box)
 
 	def prob_map(self, prob_map, center, radius):
 		for x in range(prob_map.shape[0]):
@@ -47,9 +51,11 @@ class ProbMap:
 
 	def save_prob_map(self, data_file):
 		prob_maps = np.asarray(prob_map, dtype='float32')
+		self.box = np.asarray(self.box)
 		with h5py.File(self.dataroot + '/' + data_file, 'w') as hf:
 			hf.create_dataset('prob_maps', data = prob_maps)
 			hf.create_dataset('filenames', data = self.image_name)
+			hf.create_dataset('ros', data = self.box)
 
 
 if __name__=='__main__':
