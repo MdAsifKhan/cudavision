@@ -9,16 +9,9 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.stats import multivariate_normal
 import pdb
-from utils import peak_detection
+from utils import peak_detection, load_model
 
-def load_model(model_name, key='state_dict_model', thresh='threshold'):
-	'''
-	load trained model and threshold
-	'''
-	model_dir = opt.model_root + model_name
-	checkpoint = torch.load(model_dir)
-	checkpoint, threshold = checkpoint[key], checkpoint[thresh]
-	return checkpoint, threshold
+
 
 def prob_map(prob_map_, center, radius):
 	'''
@@ -34,9 +27,8 @@ def get_center(output_nn, threshold, radius):
 	Get center of ball using peak detection algorithm
 	'''
 	peak = peak_detection(threshold, output_nn)
-	peak =  np.unravel_index(np.argmax(output_nn, axis=None), output_nn.shape)
-	xmin, ymin = peak[1] - radius, peak[0] - radius
-	xmax, ymax = peak[1] + radius, peak[0] + radius
+	xmin, ymin = peak[0][1] - radius, peak[0][0] - radius
+	xmax, ymax = peak[0][1] + radius, peak[0][0] + radius
 	center = [(ymax+ymin)/2, (xmax+xmin)/2]
 	return center
 

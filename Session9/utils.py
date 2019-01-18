@@ -1,5 +1,7 @@
 import numpy as np
 import pdb
+from arguments import opt
+import torch
 
 def batch_iou(a, b, epsilon=1e-5):
 	""" 
