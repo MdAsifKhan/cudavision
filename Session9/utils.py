@@ -1,5 +1,5 @@
 import numpy as np
-
+import pdb
 
 def batch_iou(a, b, epsilon=1e-5):
 	""" 
@@ -89,8 +89,8 @@ def peak_detection(threshold, maps):
 		max_value = map_[peak]
 		while max_value>threshold:
 			map_[peak] = 0
-		peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-		max_value = map_[peak]
+			peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
+			max_value = map_[peak]
 		peaks.append(peak)
 	
 	return  peaks
