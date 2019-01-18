@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import os as os
 from arguments import opt
 import pdb
-from utils import batch_iou
+from utils import batch_iou, performance_metric, peak_detection, predict_box
 import torch.nn.functional as F
 import numpy as np
 
@@ -18,7 +18,6 @@ class ModelEvaluator:
         optim: optimizer used for training, SGD or adam
         '''
         self.model = model
-
         self.epochs = opt.nm_epochs
         self.lr = opt.lr
         self.l2 = opt.l2
@@ -56,6 +55,9 @@ class ModelEvaluator:
             ValueError('Optimizer Not Supported')
 
     def l2_regularization(self, loss, lam):
+        '''
+        regularize output
+        '''
         l2 = 0.0
         for W in self.model.parameters():
             l2 += W.norm(2)
@@ -63,7 +65,9 @@ class ModelEvaluator:
         return loss
     
     def adjust_lr(self, step=0.1):
-        'Decrease learning rate by 0.1 during training'
+        '''
+        Decrease learning rate by 0.1 during training
+        '''
         lr = self.lr * step
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
@@ -118,8 +122,10 @@ class ModelEvaluator:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
                 output = self.model(test_data)
                 loss_ = self.loss(output, test_labels)
-                peaks_predicted = self.peak_detection(output)
-                FDR_batch, RC_batch, accuracy_batch = self.report_performance_metric(box_actual.numpy(), peaks_predicted)
+                peaks_predicted = peak_detection(threshold, output.cpu().numpy().squeeze())
+                box_predicted = predict_box(peaks_predicted, box_actual.numpy())
+                
+                FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)
                 FDR += FDR_batch
                 RC += RC_batch
                 accuracy += accuracy_batch
@@ -131,6 +137,9 @@ class ModelEvaluator:
             self.test_loss.append(batch_loss)
 
     def evaluator(self, trainloader, testloader, print_every=1000):
+        '''
+        train and validate model
+        '''
         resume_epoch = 0
         if self.resume:
             checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}.pth'.format(self.lr, self.optim, epoch))
@@ -141,7 +150,8 @@ class ModelEvaluator:
             self.train(epoch, trainloader, print_every=print_every)
             if epoch%opt.save_every==0:
                 self.test(epoch, testloader)
-                save_model = {'epoch': epoch, 
+                save_model = {'threshold': self.threshold,
+                                'epoch': epoch, 
                                 'state_dict_model': self.model.state_dict()}
                 model_name = 'Model_lr_{}_opt_{}_epoch_{}'.format(self.lr, self.optim, epoch)
                 model_dir = opt.model_root + '/' + model_name
@@ -171,41 +181,10 @@ class ModelEvaluator:
         plt.savefig('{}/loss_evaluation_iter'.format(opt.result_root))
     
     def load_model(self, model_name):
+        '''
+        load model checkpoint
+        '''
         model_dir = opt.model_root + '/' + model_name
         checkpoint = torch.load(model_dir)
         model, epoch = checkpoint['state_dict_model'], checkpoint['epoch']
         return model, epoch
-
-    def peak_detection(self, maps):
-        maps = maps.cpu().numpy().squeeze()
-        peaks = []
-        for map_ in maps:
-            peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-            max_value = map_[peak]
-            while max_value>self.threshold:
-                map_[peak] = 0
-                peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-                max_value = map_[peak]
-            peaks.append(peak)
-        return  peaks
-
-    def report_performance_metric(self, box_actual, peaks_predicted):
-        box_predicted = []
-        for box, peak in zip(box_actual.tolist(), peaks_predicted):
-            radius = min((box[2]-box[0])/2, (box[3]-box[1])/2)
-            xmin, ymin = peak[1] - radius, peak[0] - radius
-            xmax, ymax = peak[1] + radius, peak[0] + radius
-            box_predicted.append(np.array([xmin, ymin, xmax, ymax]))
-
-        box_predicted = np.asarray(box_predicted)
-
-        iou = batch_iou(box_actual, box_predicted)
-        TP = iou>0.5
-        FP = iou<=0.5
-        FN = iou<=1e-5
-
-        accuracy = TP.sum()/len(TP)
-        FDR = FP.sum()/(FP.sum() + TP.sum())
-        RC = TP.sum()/(TP.sum() + FN.sum())
-
-        return FDR, RC, accuracy
