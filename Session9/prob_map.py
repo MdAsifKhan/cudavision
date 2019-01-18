@@ -28,7 +28,7 @@ class ProbMap:
 				if type(tree['annotation']['object']) is not list:
 					tree['annotation']['object'] = [tree['annotation']['object']]
 			
-				prob_map = np.zeros([160, 120], dtype='float32')
+				prob_map = np.zeros([120, 160], dtype='float32')
 				box = np.array([0, 0, 0, 0])
 				for object_ in tree['annotation']['object']:
 					if object_['name']=='ball':

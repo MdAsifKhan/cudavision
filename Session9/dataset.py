@@ -36,7 +36,7 @@ class SoccerDataSet:
 					self.targets.append(targets[idx])
 					self.box.append(box[idx].astype('float32'))
 				else:
-					self.targets.append(np.zeros([160, 120], dtype='float32'))
+					self.targets.append(np.zeros([120, 160], dtype='float32'))
 					self.box.append(np.array([0, 0, 0, 0], dtype='float32'))
 
 	def __len__(self):

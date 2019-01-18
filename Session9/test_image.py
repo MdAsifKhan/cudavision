@@ -43,7 +43,7 @@ def test_image(path, xml_path=None, epoch=15):
 	model.eval()
 
 	with torch.no_grad():
-		output = model(img).transpose(1, 2).cpu().numpy()
+		output = model(img).cpu().numpy()
 		plt.imshow(output,  cmap='hot', interpolation='nearest')
 		plt.savefig('{}/test_image_predicted.png'.format(opt.result_root))
 
@@ -57,7 +57,7 @@ def test_image(path, xml_path=None, epoch=15):
 		if type(tree['annotation']['object']) is not list:
 			tree['annotation']['object'] = [tree['annotation']['object']]
 
-		prob_map_ = np.zeros([160, 120], dtype='float32')
+		prob_map_ = np.zeros([120, 160], dtype='float32')
 		for object_ in tree['annotation']['object']:
 			if object_['name']=='ball':
 				bndbox = object_['bndbox']
@@ -73,5 +73,5 @@ def test_image(path, xml_path=None, epoch=15):
 if __name__ =='__main__':
 	img_path = opt.data_root + '/test_cnn/'+ '00292.jpg'
 	xml_path = opt.data_root + '/test_cnn/'+ '00292.xml'
-	epoch = 30
+	epoch = 20
 	test_image(img_path, xml_path)
