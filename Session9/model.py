@@ -139,6 +139,7 @@ class SweatyNet1(nn.Module):
 
         out = self.layer18(self.layer17(self.layer16(out8)))
 
+        pdb.set_trace()
         return out.squeeze()
 
 class SweatyNet2(nn.Module):
@@ -405,3 +406,24 @@ class SweatyNet3(nn.Module):
         out = self.layer20(self.layer19(self.layer18(out8)))
         
         return out.squeeze()
+
+
+class ConvLSTM(nn.Module):
+    def __init__(self, nc, map_size):
+        super(ConvLSTM, self).__init__()
+        self.map_size = map_size
+        self.nc = nc
+        self.layer = nn.Sequential(
+                        nn.Conv2d(16, self.nc, 3, padding=0),
+                        nn.BatchNorm2d(self.nc),
+                        nn.ReLU()
+                    )
+       	self.lstm = nn.LSTM(self.map_size[0]*self.map_size[1], self.map_size[0]*self.map_size[1])
+
+    def forward(self, x):
+    	x = self.layer(x)
+    	batch_size, nc = x.shape[0], x.shape[1]
+    	x = x.view(nc, batch_size, self.map_size[2]*self.map_size[3])
+    	out, _ = self.lstm(x)
+    	out = out[-1].view(batch_size, self.map_size[2], self.map_size[3])
+    	return out
