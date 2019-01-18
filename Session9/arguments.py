@@ -19,6 +19,8 @@ parser.add_argument('--model_root', default='', help='folder to output model che
 parser.add_argument('--result_root', default='', help='folder to output image checkpoints')
 parser.add_argument('--use_gpu', type=bool, default=True, help='Enable GPU Training')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
+parser.add_argument('--image', required=False, help='test image path', default='')
+parser.add_argument('--xml', required=False, help='test xml path', default='')
 
 opt = parser.parse_args()
 opt.dataset = 'soccer'
@@ -31,8 +33,10 @@ if opt.model_root == '':
 	opt.model_root = '/home/local/stud/khan01/cudavision/Session9/model/'
 if opt.result_root == '':
 	opt.result_root = '/home/local/stud/khan01/cudavision/Session9/results'
-
-
+if opt.image == '':
+	opt.image = opt.data_root + '/test_cnn/' + '00292.jpg'
+if opt.xml == '':
+	opt.xml = opt.data_root + '/test_cnn/' + '00292.xml'
 if opt.optimizer=='adam':
 	opt.lr = 0.0001
 
