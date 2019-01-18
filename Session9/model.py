@@ -255,7 +255,7 @@ class SweatyNet2(nn.Module):
 
         out = self.layer14(self.layer13(self.layer12(out8)))
         
-        return out
+        return out.squeeze()
 
 class SweatyNet3(nn.Module):
     def __init__(self, nc):
@@ -404,4 +404,4 @@ class SweatyNet3(nn.Module):
 
         out = self.layer20(self.layer19(self.layer18(out8)))
         
-        return out
+        return out.squeeze()
