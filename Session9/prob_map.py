@@ -35,7 +35,7 @@ class ProbMap:
 						bndbox = object_['bndbox']
 						xmin, ymin = int(bndbox['xmin'])/4, int(bndbox['ymin'])/4
 						xmax, ymax = int(bndbox['xmax'])/4, int(bndbox['ymax'])/4
-						center = [(xmax+xmin)/2, (ymax+ymin)/2]
+						center = [(ymax+ymin)/2, (xmax+xmin)/2]
 						radius = min((xmax-xmin)/2, (ymax-ymin)/2)
 						prob_map = self.prob_map(prob_map, center, radius)
 						box = np.array([xmin, ymin, xmax, ymax])	
@@ -43,11 +43,11 @@ class ProbMap:
 				self.image_name.append(name)
 				self.box.append(box)
 
-	def prob_map(self, prob_map, center, radius):
-		for x in range(prob_map.shape[0]):
-			for y in range(prob_map.shape[1]):
-				prob_map[x, y] = multivariate_normal.pdf([x, y], center, [2*radius, 2*radius])
-	return prob_map
+	def prob_map(self, prob_map_, center, radius):
+		for x in range(prob_map_.shape[0]):
+			for y in range(prob_map_.shape[1]):
+				prob_map_[x, y] = multivariate_normal.pdf([x, y], center, [2*radius, 2*radius])
+		return prob_map_
 
 	def save_prob_map(self, data_file):
 		prob_maps = np.asarray(self.prob_maps, dtype='float32')

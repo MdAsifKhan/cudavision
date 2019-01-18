@@ -75,20 +75,17 @@ class ModelEvaluator:
         '''
         self.model.train()
         loss_batch = 0
-        if epoch % 10 == 0 and epoch > 0:
+        if epoch % 100 == 0 and epoch > 0:
             self.adjust_lr(step=0.1)
         for b_idx, (train_data, train_labels, _) in enumerate(trainloader):
             if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
             
-            output = self.model(train_data).squeeze()
-            train_labels = train_labels.transpose(1, 2)
-            train_labels = F.pad(train_labels, pad=(3,3,3,3), mode='constant', value=0)
+            output = self.model(train_data)
             threshold = 0.7*train_labels.max()
             if threshold>self.threshold:
                 self.threshold = threshold
-
             loss = self.loss(output, train_labels)
             
             if self.l2:
@@ -121,8 +118,6 @@ class ModelEvaluator:
                 if self.use_gpu:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
                 output = self.model(test_data)
-                test_labels = test_labels.transpose(1, 2)
-                test_labels = F.pad(test_labels, pad=(3,3,3,3), mode='constant', value=0)
                 loss_ = self.loss(output, test_labels)
                 peaks_predicted = self.peak_detection(output)
                 FDR_batch, RC_batch, accuracy_batch = self.report_performance_metric(box_actual.numpy(), peaks_predicted)
@@ -131,8 +126,9 @@ class ModelEvaluator:
                 accuracy += accuracy_batch
                 self.iter_loss_test.append(loss_)
                 batch_loss += loss_
-            print('Epoch = {0:} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(epoch, FDR/len(testloader), RC/len(testloader), accuracy/len(testloader)))
             batch_loss /= len(testloader)
+            print('Epoch = {0:} loss = {1:.4f} FDR = {2:.4f} , RC {3:.4f} =, accuracy = {4:.4f}'.format(epoch, batch_loss, FDR/len(testloader), RC/len(testloader), accuracy/len(testloader)))
+
             self.test_loss.append(batch_loss)
 
     def evaluator(self, trainloader, testloader, print_every=1000):
@@ -198,8 +194,8 @@ class ModelEvaluator:
         box_predicted = []
         for box, peak in zip(box_actual.tolist(), peaks_predicted):
             radius = min((box[2]-box[0])/2, (box[3]-box[1])/2)
-            xmin, ymin = peak[0] - radius, peak[1] - radius
-            xmax, ymax = peak[0] + radius, peak[1] + radius
+            xmin, ymin = peak[1] - radius, peak[0] - radius
+            xmax, ymax = peak[1] + radius, peak[0] + radius
             box_predicted.append(np.array([xmin, ymin, xmax, ymax]))
 
         box_predicted = np.asarray(box_predicted)
