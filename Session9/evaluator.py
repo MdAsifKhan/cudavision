@@ -81,8 +81,7 @@ class ModelEvaluator:
             if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
-            
-            output = self.model(train_data)
+            output = self.model(train_data).transpose(1, 2)
             threshold = 0.7*train_labels.max()
             if threshold>self.threshold:
                 self.threshold = threshold
@@ -117,7 +116,7 @@ class ModelEvaluator:
             for test_data, test_labels, box_actual in testloader:
                 if self.use_gpu:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
-                output = self.model(test_data)
+                output = self.model(test_data).transpose(1, 2)
                 loss_ = self.loss(output, test_labels)
                 peaks_predicted = self.peak_detection(output)
                 FDR_batch, RC_batch, accuracy_batch = self.report_performance_metric(box_actual.numpy(), peaks_predicted)
