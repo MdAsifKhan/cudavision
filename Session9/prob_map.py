@@ -40,7 +40,7 @@ class ProbMap:
 						radius = min((xmax-xmin)/2, (ymax-ymin)/2)
 						prob_map_ = self.prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
 						box = np.array([xmin, ymin, xmax, ymax])	
-				self.prob_maps.append(prob_map)
+				self.prob_maps.append(prob_map_)
 				self.image_name.append(name)
 				self.box.append(box)
 
