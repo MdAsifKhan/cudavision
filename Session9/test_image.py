@@ -12,14 +12,15 @@ import pdb
 from utils import peak_detection, load_model
 import matplotlib.cm as cm
 from skimage.feature import peak_local_max
+import math
 
-def prob_map(prob_map_, center, radius):
+def prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius):
 	'''
 	get probability map based on center and radius
 	'''
-	for x in range(prob_map_.shape[0]):
-		for y in range(prob_map_.shape[1]):
-			prob_map_[x, y] = multivariate_normal.pdf([x, y], center, [2*radius, 2*radius])
+	for x in range(int(ymin), min(math.ceil(ymax), prob_map_.shape[0])):
+		for y in range(int(xmin), min(math.ceil(xmax), prob_map_.shape[1])):
+			prob_map_[x, y] = multivariate_normal.pdf([x, y], center, [radius, radius])
 	return prob_map_
 
 def get_center(output_nn, threshold, radius):
@@ -31,7 +32,7 @@ def get_center(output_nn, threshold, radius):
 	xmin, ymin = peak_[0][1] - radius, peak_[0][0] - radius
 	xmax, ymax = peak_[0][1] + radius, peak_[0][0] + radius
 	center = [(ymax+ymin)/2, (xmax+xmin)/2]
-	return center
+	return center, xmin, ymin, xmax, ymax 
 
 
 def test_image(path, xml_path=None, epoch=15):
@@ -53,7 +54,7 @@ def test_image(path, xml_path=None, epoch=15):
 				xmax, ymax = int(bndbox['xmax'])/4, int(bndbox['ymax'])/4
 				center = [(ymax+ymin)/2, (xmax+xmin)/2]
 				radius = min((xmax-xmin)/2, (ymax-ymin)/2)
-				prob_map_ = prob_map(prob_map_, center, radius)
+				prob_map_ = prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
 
 		plt.imshow(prob_map_,  cmap=cm.jet)
 		plt.savefig('{}/test_image_original.png'.format(opt.result_root))
@@ -95,8 +96,8 @@ def test_image(path, xml_path=None, epoch=15):
 		plt.cla()
 		plt.clf()
 
-		center = get_center(output, threshold, radius)
-		prob_map_predicted = prob_map(prob_map_predicted, center, radius)
+		center,xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
+		prob_map_predicted = prob_map(prob_map_predicted, xmin, ymin, xmax, ymax, center, radius)
 		plt.imshow(prob_map_predicted,  cmap=cm.jet)
 		plt.savefig('{}/test_image_predicted_postprocess.png'.format(opt.result_root))
 		plt.cla()
