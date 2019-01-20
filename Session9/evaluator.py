@@ -122,7 +122,7 @@ class ModelEvaluator:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
                 output = self.model(test_data)
                 loss_ = self.loss(output, test_labels)
-                peaks_predicted = peak_detection(threshold, output.cpu().numpy().squeeze())
+                peaks_predicted = peak_detection(self.threshold, output.cpu().numpy().squeeze())
                 box_predicted = predict_box(peaks_predicted, box_actual.numpy())
                 
                 FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)

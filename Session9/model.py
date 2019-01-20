@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import pdb
 import  torch.nn.functional as F
+from torch.nn.functional import interpolate
 
 class SweatyNet1(nn.Module):
     def __init__(self, nc):
@@ -80,10 +81,9 @@ class SweatyNet1(nn.Module):
                         nn.ReLU()
 
         )
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        
+        #self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.layer13 = nn.Sequential(
-                        nn.Conv2d(8+16+32+64+64, 64, 1, padding=1),
+                        nn.Conv2d(8+16+32+64+64, 64, 1, padding=0),
                         nn.BatchNorm2d(64),
                         nn.ReLU()
 
@@ -107,13 +107,13 @@ class SweatyNet1(nn.Module):
 
         )       
         self.layer17 = nn.Sequential(
-                        nn.Conv2d(16, 16, 3, padding=0),
+                        nn.Conv2d(16, 16, 3, padding=1),
                         nn.BatchNorm2d(16),
                         nn.ReLU()
 
         )
         self.layer18 = nn.Sequential(
-                        nn.Conv2d(16, self.nc, 3, padding=0),
+                        nn.Conv2d(16, self.nc, 3, padding=1),
                         nn.BatchNorm2d(self.nc),
                         nn.ReLU()
 
@@ -131,15 +131,17 @@ class SweatyNet1(nn.Module):
         out6 = self.pool(out5)
         out7 = self.layer12(self.layer11(self.layer10(self.layer9(out6))))
 
-        out7 = torch.cat((out5, self.upsample(out7)), 1)
+        out7 = interpolate(out7, scale_factor=2, mode='bilinear', align_corners=True)
+        out7 = torch.cat((out5, out7), 1)
 
-        out8 = self.upsample(self.layer15(self.layer14(self.layer13(out7))))
-        out3 = F.pad(out3, pad=(2,2,2,2), mode='constant', value=0)
+        out8 = self.layer15(self.layer14(self.layer13(out7)))
+        out8 = interpolate(out8, scale_factor=2, mode='bilinear', align_corners=True)
+        #out3 = F.pad(out3, pad=(2,2,2,2), mode='constant', value=0)
+
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer18(self.layer17(self.layer16(out8)))
 
-        pdb.set_trace()
         return out.squeeze()
 
 class SweatyNet2(nn.Module):
@@ -247,11 +249,13 @@ class SweatyNet2(nn.Module):
 
         out6 = self.pool(out5)
         out7 = self.layer8(self.layer7(self.layer6(out6)))
-        out7 = torch.cat((out5, self.upsample(out7)), 1)
+        
+        out7 = interpolate(out7, scale_factor=2, mode='bilinear', align_corners=True)
+        out7 = torch.cat((out5, out7), 1)
 
-        out8 = self.upsample(self.layer11(self.layer10(self.layer9(out7))))
-
-        out3 = F.pad(out3, pad=(2,2,2,2), mode='constant', value=0)
+        out8 = self.layer11(self.layer10(self.layer9(out7)))
+        out8 = interpolate(out8, scale_factor=2, mode='bilinear', align_corners=True)
+        #out3 = F.pad(out3, pad=(2,2,2,2), mode='constant', value=0)
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer14(self.layer13(self.layer12(out8)))
