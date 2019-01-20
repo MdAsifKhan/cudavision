@@ -27,8 +27,7 @@ def get_center(output_nn, threshold, radius):
 	'''
 	Get center of ball using peak detection algorithm
 	'''
-	#peak = peak_detection(threshold, output_nn)
-	peak_ = peak_local_max(output_nn, min_distance=int(radius))
+	peak_ = peak_detection(threshold, output_nn)
 	xmin, ymin = peak_[0][1] - radius, peak_[0][0] - radius
 	xmax, ymax = peak_[0][1] + radius, peak_[0][0] + radius
 	center = [(ymax+ymin)/2, (xmax+xmin)/2]
@@ -68,8 +67,7 @@ def test_image(path, xml_path=None, epoch=15):
 	img = Image.open(path)
 	transform = transforms.Compose([
 			transforms.ToTensor(),
-			transforms.Normalize((0.5, 0.5, 0.5),
-					(0.5, 0.5, 0.5))])
+			transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
 	img = transform(img)
 	img = img.numpy()
 	img = img[np.newaxis, ...]
@@ -88,15 +86,16 @@ def test_image(path, xml_path=None, epoch=15):
 	with torch.no_grad():
 		prob_map_predicted = np.zeros([120, 160], dtype='float32')
 		output = model(img).cpu()
+		output = output.squeeze()
 		if len(output.shape)<3:
 			output = output.unsqueeze(0)
-		output = output.squeeze().detach().numpy()
-		plt.imshow(output,  cmap=cm.jet)
+		output = output.detach().numpy()
+		center,xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
+		plt.imshow(output[0],  cmap=cm.jet)
 		plt.savefig('{}/test_image_predicted.png'.format(opt.result_root))
 		plt.cla()
 		plt.clf()
 
-		center,xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
 		prob_map_predicted = prob_map(prob_map_predicted, xmin, ymin, xmax, ymax, center, radius)
 		plt.imshow(prob_map_predicted,  cmap=cm.jet)
 		plt.savefig('{}/test_image_predicted_postprocess.png'.format(opt.result_root))
@@ -105,5 +104,5 @@ def test_image(path, xml_path=None, epoch=15):
 
 
 if __name__=='__main__':
-	epoch = 10
+	epoch = 95
 	test_image(opt.image, opt.xml)
