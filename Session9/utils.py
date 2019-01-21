@@ -65,6 +65,42 @@ def predict_box(peaks_predicted, box_actual):
 	return np.asarray(box_predicted)
 
 
+def tp_fp_tn_fn(peaks, box_actual, radius=5):
+
+	centers = []
+	for box in box_actual:
+		xmin, ymin = box[0], box[1]
+		xmax, ymax = box[2], box[3]
+		center = [(ymax+ymin)/2, (xmax+xmin)/2]
+		centers.append(center)
+
+	TP, FP, FN, TN = 0.0, 0.0, 0.0, 0.0
+	for peak, center in zip(peaks, centers):
+		y_p, x_p = peak[0], peak[1]
+		y, x = center[0], center[1]
+		if y==0 and x==0 and y_p==0 and x_p==0:
+			TN += 1
+		elif (y!=0 and x!=0) and (abs(y-y_p)<=radius and abs(x-x_p)<=radius):
+			TP += 1
+		elif (y==0 and x==0) and y_p!=0 and x_p!=0:
+			FN += 1
+		else:
+			FP += 1
+	return TP, FP, FN, TN
+
+def performance_metric_alternative(TP, FP, FN, TN):
+	
+	accuracy = (TP+TN)/(TP+TN+FP+FN)
+	if FP==0 and TP==0:
+		FDR = 1.0
+	else:
+		FDR = FP/(FP + TP)
+	if FP==0 and TP==0:
+		RC = 0.0
+	else:
+		RC = TP/(TP + FN)
+	return FDR, RC, accuracy
+
 def performance_metric(box_actual, box_predicted):
 	'''
 	Performance Metric based on predicted peaks
@@ -81,7 +117,7 @@ def performance_metric(box_actual, box_predicted):
 
 	return FDR, RC, accuracy
 
-def peak_detection(threshold, maps):
+def peak_detection(threshold, maps, radius=2):
 	'''
 	peak detection on predicted score
 	'''
@@ -90,7 +126,9 @@ def peak_detection(threshold, maps):
 		peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
 		max_value = map_[peak]
 		while max_value>threshold:
-			map_[peak] = 0
+			map_[max(0, int(peak[0]-radius)):min(int(peak[0]+1+radius), map_.shape[0]), 
+					max(0, int(peak[1]-radius)):min(int(peak[1]+1+radius), map_.shape[1])] = 0
+			#map_[peak] = 0
 			peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
 			max_value = map_[peak]
 		peaks.append(peak)

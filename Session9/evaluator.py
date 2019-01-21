@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import os as os
 from arguments import opt
 import pdb
-from utils import batch_iou, performance_metric, peak_detection, predict_box
+from utils import batch_iou, performance_metric, peak_detection, predict_box, performance_metric_alternative, tp_fp_tn_fn
 import torch.nn.functional as F
 import numpy as np
 
@@ -31,6 +31,12 @@ class ModelEvaluator:
         self.optim = opt.optimizer
         self.resume = opt.resume
         self.threshold = 0
+        self.fdr_train = []
+        self.RC_train = []
+        self.accuracy_train = []
+        self.fdr_test = []
+        self.RC_test = []
+        self.accuracy_test = []        
         if self.use_gpu:
             self.model.cuda()
 
@@ -81,7 +87,8 @@ class ModelEvaluator:
         loss_batch = 0
         if epoch % 100 == 0 and epoch > 0:
             self.adjust_lr(step=0.1)
-        for b_idx, (train_data, train_labels, _) in enumerate(trainloader):
+        TP, FP, FN, TN = 0, 0, 0, 0
+        for b_idx, (train_data, train_labels, box_actual) in enumerate(trainloader):
             if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
@@ -96,9 +103,14 @@ class ModelEvaluator:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-
+            peaks_predicted_train = peak_detection(self.threshold, output.cpu().detach().numpy().squeeze())
+            TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, box_actual.numpy())
+            TP += TP_t
+            FP += FP_t
+            FN += FN_t
+            TN += TN_t
             if b_idx % opt.print_every == 0:
-                print('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4:.6f}'.
+                print('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4}'.
                       format(epoch, b_idx * len(train_data),
                              len(trainloader.dataset),
                              100. * b_idx / len(trainloader), loss))
@@ -106,7 +118,16 @@ class ModelEvaluator:
             loss_ = loss.item()
             self.iter_loss_train.append(loss_)
             loss_batch += loss_
+        
+        FDR_train, RC_train, accuracy_train = performance_metric_alternative(TP, FP, FN, TN)
+        self.fdr_train.append(FDR_train)
+        self.accuracy_train.append(accuracy_train)
+        self.RC_train.append(RC_train)
+        
         loss_batch /= len(trainloader)
+
+        print('Epoch = {} Train TP {} FP {} TN {} FN {} '.format(epoch, TP, FP, TN, FN))
+        print('Train loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(loss_batch, FDR_train, RC_train, accuracy_train))
         self.train_loss.append(loss_batch)
 
     def test(self, epoch, testloader):
@@ -114,7 +135,7 @@ class ModelEvaluator:
         method for testing
         '''
         self.model.eval()
-        FDR, RC, accuracy = 0, 0, 0
+        TP, FP, FN, TN = 0, 0, 0, 0
         with torch.no_grad():
             batch_loss = 0
             for test_data, test_labels, box_actual in testloader:
@@ -122,17 +143,27 @@ class ModelEvaluator:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
                 output = self.model(test_data)
                 loss_ = self.loss(output, test_labels)
-                peaks_predicted = peak_detection(self.threshold, output.cpu().numpy().squeeze())
-                box_predicted = predict_box(peaks_predicted, box_actual.numpy())
-                
-                FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)
-                FDR += FDR_batch
-                RC += RC_batch
-                accuracy += accuracy_batch
+                peaks_predicted_test = peak_detection(self.threshold, output.cpu().numpy().squeeze())
+                #box_predicted = predict_box(peaks_predicted, box_actual.numpy())
+
+                TP_test, FP_test, FN_test, TN_test = tp_fp_tn_fn(peaks_predicted_test, box_actual.numpy())
+                #FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)
+                TP += TP_test
+                FP += FP_test
+                FN += FN_test
+                TN += TN_test
                 self.iter_loss_test.append(loss_)
                 batch_loss += loss_
+            
             batch_loss /= len(testloader)
-            print('Epoch = {0:} loss = {1:.4f} FDR = {2:.4f} , RC {3:.4f} =, accuracy = {4:.4f}'.format(epoch, batch_loss, FDR/len(testloader), RC/len(testloader), accuracy/len(testloader)))
+            FDR_test, RC_test, accuracy_test = performance_metric_alternative(TP, FP, FN, TN)
+            
+            self.fdr_test.append(FDR_test)
+            self.accuracy_test.append(accuracy_test)
+            self.RC_test.append(RC_test)
+
+            print('epoch {} Test TP {} FP {} TN {} FN {}'.format(epoch, TP, FP, TN, FN))            
+            print('Test loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(batch_loss, FDR_test, RC_test, accuracy_test))
 
             self.test_loss.append(batch_loss)
 
