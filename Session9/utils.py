@@ -65,7 +65,7 @@ def predict_box(peaks_predicted, box_actual):
 	return np.asarray(box_predicted)
 
 
-def tp_fp_tn_fn(peaks, box_actual, radius=5):
+def tp_fp_tn_fn(peaks_batch, box_actual, radius=5):
 
 	centers = []
 	for box in box_actual:
@@ -73,11 +73,15 @@ def tp_fp_tn_fn(peaks, box_actual, radius=5):
 		xmax, ymax = box[2], box[3]
 		center = [(ymax+ymin)/2, (xmax+xmin)/2]
 		centers.append(center)
-
-	TP, FP, FN, TN = 0.0, 0.0, 0.0, 0.0
-	for peak, center in zip(peaks, centers):
-		y_p, x_p = peak[0], peak[1]
+	TP, FP, FN, TN = 0, 0, 0, 0
+	for peaks, center in zip(peaks_batch, centers):
 		y, x = center[0], center[1]
+		#y_p, x_p = get_closest_peak(x, y, peaks)
+		y_p, x_p = peaks[0], peaks[1]
+	#for peak, center in zip(peaks, centers):
+		# center = [0, 0] if there is no ball in an image
+		# peak = [0, 0] if predicted map is zero
+		#y, x = center[0], center[1]
 		if y==0 and x==0 and y_p==0 and x_p==0:
 			TN += 1
 		elif (y!=0 and x!=0) and (abs(y-y_p)<=radius and abs(x-x_p)<=radius):
@@ -87,6 +91,16 @@ def tp_fp_tn_fn(peaks, box_actual, radius=5):
 		else:
 			FP += 1
 	return TP, FP, FN, TN
+
+def get_closest_peak(x, y, peaks):
+	ball_peak = peaks[0]
+	dist_old = 1000
+	for peak in peaks:
+		y_p, x_p = peak[0], peak[1]
+		dist_new = abs(y-y_p) + abs(x-x_p)
+		if dist_new<=dist_old:
+			ball_peak = (y_p, x_p)
+	return ball_peak
 
 def performance_metric_alternative(TP, FP, FN, TN):
 	
@@ -117,23 +131,25 @@ def performance_metric(box_actual, box_predicted):
 
 	return FDR, RC, accuracy
 
-def peak_detection(threshold, maps, radius=2):
+def peak_detection(threshold, maps, radius=5):
 	'''
 	peak detection on predicted score
 	'''
 	peaks = []
 	for map_ in maps:
+		#peaks_ = []
 		peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
 		max_value = map_[peak]
-		while max_value>threshold:
+		#peaks_.append(peak)
+		while max_value>=threshold:
 			map_[max(0, int(peak[0]-radius)):min(int(peak[0]+1+radius), map_.shape[0]), 
 					max(0, int(peak[1]-radius)):min(int(peak[1]+1+radius), map_.shape[1])] = 0
-			#map_[peak] = 0
+
 			peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
 			max_value = map_[peak]
-		peaks.append(peak)
-	
-	return  peaks
+			#peaks_.append(peak)
+		peaks.append(peaks)
+	return peaks
 
 def load_model(model_name, key='state_dict_model', thresh='threshold'):
 	'''

@@ -24,7 +24,8 @@ class SoccerDataSet:
 			targets = np.array(targets).astype('float32')
 			self.filenames = list(hf['filenames'].value)
 			box = list(hf['ros'].value)
-		
+
+		self.threshold = 0.7*targets.max()
 		self.images, self.targets, self.box = [], [], []
 		self.filenames = [filename.decode('utf-8') for filename in self.filenames]
 		for filename in tqdm(os.listdir(self.dataroot)):
@@ -49,7 +50,22 @@ class SoccerDataSet:
 		
 		if self.transform:
 			img = self.transform(img)
-
+		#img = np.asarray(img).transpose(2, 0, 1)/255.0
+		#img = torch.from_numpy(img).float()
 		prob_ = self.targets[idx]
 		coord_ = self.box[idx]
 		return img, prob_, coord_
+
+
+class SeqSoccerDataSet:
+	'''
+	DataSet reader: Readet to get images and probability map from a folder
+	'''
+	def __init__(self):
+		pass
+
+	def __len__(self):
+		pass
+
+	def __getitem__(self, idx):
+		pass
