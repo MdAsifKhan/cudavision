@@ -148,7 +148,7 @@ def peak_detection(threshold, maps, radius=5):
 			peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
 			max_value = map_[peak]
 			#peaks_.append(peak)
-		peaks.append(peaks)
+		peaks.append(peak)
 	return peaks
 
 def load_model(model_name, key='state_dict_model', thresh='threshold'):
