@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.stats import multivariate_normal
 import pdb
-from utils import peak_detection, load_model
+from utils import peak_detection, load_model, get_closest_peak
 import matplotlib.cm as cm
 from skimage.feature import peak_local_max
 import math
@@ -90,7 +90,7 @@ def test_image(path, xml_path=None, epoch=15):
 		if len(output.shape)<3:
 			output = output.unsqueeze(0)
 		output = output.detach().numpy()
-		center,xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
+		center, xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
 		plt.imshow(output[0],  cmap=cm.jet)
 		plt.savefig('{}/test_image_predicted.png'.format(opt.result_root))
 		plt.cla()
