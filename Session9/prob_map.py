@@ -44,10 +44,10 @@ class ProbMap:
 				self.image_name.append(name)
 				self.box.append(box)
 
-	def prob_map(self, prob_map_, xmin, ymin, xmax, ymax, center, radius):
+	def prob_map(self, prob_map_, xmin, ymin, xmax, ymax, center, radius=4):
 		for x in range(int(ymin), min(math.ceil(ymax), prob_map_.shape[0])):
 			for y in range(int(xmin), min(math.ceil(xmax), prob_map_.shape[1])):
-				prob_map_[x, y] = multivariate_normal.pdf([x, y], center, [2*radius, 2*radius])
+				prob_map_[x, y] = multivariate_normal.pdf([x, y], center, [radius, radius])
 		return prob_map_
 
 	def save_prob_map(self, data_file):

@@ -25,7 +25,7 @@ if opt.dataset== 'soccer':
 										#transforms.RandomResizedCrop(opt.input_size[1]),	
 										#transforms.RandomHorizontalFlip(),	
 										#transforms.RandomRotation(opt.rot_degree),
-										transforms.ColorJitter(brightness=0.4,
+										transforms.ColorJitter(brightness=0.3,
 														contrast=0.4, saturation=0.4),
 										transforms.ToTensor(),
 										transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
@@ -36,7 +36,7 @@ if opt.dataset== 'soccer':
 										#transforms.RandomResizedCrop(opt.input_size[1]),	
 										#transforms.RandomHorizontalFlip(),	
 										#transforms.RandomRotation(opt.rot_degree),
-										transforms.ColorJitter(brightness=0.6,
+										transforms.ColorJitter(brightness=0.3,
 														contrast=0.4, saturation=0.4),
 										transforms.ToTensor(),
 										transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
