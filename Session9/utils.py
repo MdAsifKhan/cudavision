@@ -95,7 +95,7 @@ def performance_metric_alternative(TP, FP, FN, TN):
 		FDR = 1.0
 	else:
 		FDR = FP/(FP + TP)
-	if FP==0 and TP==0:
+	if FN==0 and TP==0:
 		RC = 0.0
 	else:
 		RC = TP/(TP + FN)

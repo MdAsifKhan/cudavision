@@ -210,7 +210,38 @@ class ModelEvaluator:
         plt.ylabel('Loss')
         plt.legend()
         plt.savefig('{}/loss_evaluation_iter'.format(opt.result_root))
-    
+        plt.cla()
+        plt.clf()
+        plt.plot(range(len(self.fdr_train)), self.fdr_train,
+                 label='Training FDR')
+        plt.plot(range(len(self.fdr_test)), self.fdr_test,
+                     label='Testing FDR')
+        plt.xlabel('Epoch')
+        plt.ylabel('FDR')
+        plt.legend()
+        plt.savefig('{}/FDR_evaluation_epoch'.format(opt.result_root))    
+        plt.cla()
+        plt.clf()
+        
+        plt.plot(range(len(self.RC_train)), self.RC_train,
+                 label='Training RC')
+        plt.plot(range(len(self.RC_test)), self.RC_test,
+                     label='Testing RC')
+        plt.xlabel('Epoch')
+        plt.ylabel('RC')
+        plt.legend()
+        plt.savefig('{}/rc_evaluation_epoch'.format(opt.result_root))
+        plt.cla()
+        plt.clf()
+        plt.plot(range(len(self.accuracy_train)), self.accuracy_train,
+                 label='Training Acc')
+        plt.plot(range(len(self.accuracy_test)), self.accuracy_test,
+                     label='Testing Acc')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        plt.savefig('{}/accuracy_evaluation_epoch'.format(opt.result_root)) 
+                 
     def load_model(self, model_name):
         '''
         load model checkpoint
