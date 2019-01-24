@@ -20,29 +20,29 @@ batch_size = opt.batch_size
 
 #
 if opt.dataset== 'soccer':
-	trainset = SoccerDataSet(data_path=opt.data_root + '/train_cnn', map_file= 'train_maps', 
-										transform= transforms.Compose([
-										#transforms.RandomResizedCrop(opt.input_size[1]),	
-										#transforms.RandomHorizontalFlip(),	
-										#transforms.RandomRotation(opt.rot_degree),
-										transforms.ColorJitter(brightness=0.3,
-														contrast=0.4, saturation=0.4),
-										transforms.ToTensor(),
-										transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-				]))
+    trainset = SoccerDataSet(data_path=opt.data_root + '/train_cnn', map_file= 'train_maps',
+                                        transform= transforms.Compose([
+                                        #transforms.RandomResizedCrop(opt.input_size[1]),
+                                        #transforms.RandomHorizontalFlip(),
+                                        #transforms.RandomRotation(opt.rot_degree),
+                                        transforms.ColorJitter(brightness=0.3,
+                                                        contrast=0.4, saturation=0.4),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                ]))
 
-	testset = SoccerDataSet(data_path=opt.data_root +'/test_cnn', map_file='test_maps',
-										transform= transforms.Compose([
-										#transforms.RandomResizedCrop(opt.input_size[1]),	
-										#transforms.RandomHorizontalFlip(),	
-										#transforms.RandomRotation(opt.rot_degree),
-										transforms.ColorJitter(brightness=0.3,
-														contrast=0.4, saturation=0.4),
-										transforms.ToTensor(),
-										transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-				]))
+    testset = SoccerDataSet(data_path=opt.data_root +'/test_cnn', map_file='test_maps',
+                                        transform= transforms.Compose([
+                                        #transforms.RandomResizedCrop(opt.input_size[1]),
+                                        #transforms.RandomHorizontalFlip(),
+                                        #transforms.RandomRotation(opt.rot_degree),
+                                        transforms.ColorJitter(brightness=0.3,
+                                                        contrast=0.4, saturation=0.4),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                ]))
 else:
-	pass
+    pass
 
 # Data Loader
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
@@ -52,6 +52,6 @@ import pdb
 nc = 1
 threshold = trainset.threshold
 model = SweatyNet1(nc)
-modeleval = ModelEvaluator(model, threshold)
+modeleval = ModelEvaluator(model)
 modeleval.evaluator(trainloader, testloader)
 modeleval.plot_loss()

@@ -9,7 +9,7 @@ parser.add_argument('--workers', type=int, help='number of data loading workers'
 parser.add_argument('--batch_size', type=int, default=8, help='input batch size')
 
 parser.add_argument('--nm_epochs', type=int, default=50, help='number of epochs for training')
-parser.add_argument('--l2 regularization', type=float, default=0.0, help='l2 parameter')
+parser.add_argument('--l2', type=float, default=0.0, help='l2 parameter')
 parser.add_argument('--optimizer', type=str, default='adam', help='optimizer to use')
 parser.add_argument('--print_every', type=int, default=2, help='print checkpoints')
 parser.add_argument('--save_every', type=int, default=5, help='model checkpoints')
@@ -27,30 +27,30 @@ opt.dataset = 'soccer'
 opt.input_size = (640, 480)
 opt.rot_degree = 45
 if opt.data_root == '':
-	opt.data_root = '/home/local/stud/khan01/cudavision/Session9/SoccerData'
+    opt.data_root = 'SoccerData'
 if opt.model_root == '':
-	opt.model_root = '/home/local/stud/khan01/cudavision/Session9/model/'
+    opt.model_root = 'model/'
 if opt.result_root == '':
-	opt.result_root = '/home/local/stud/khan01/cudavision/Session9/results'
+    opt.result_root = 'results'
 if opt.image == '':
-	opt.image = opt.data_root + '/test_cnn/' + '00292.jpg'
+    opt.image = opt.data_root + '/test_cnn/' + '00292.jpg'
 if opt.xml == '':
-	opt.xml = opt.data_root + '/test_cnn/' + '00292.xml'
+    opt.xml = opt.data_root + '/test_cnn/' + '00292.xml'
 if opt.optimizer=='adam':
-	opt.lr = 0.0001
+    opt.lr = 0.0001
 
 elif opt.optimizer=='sgd':
-	opt.lr = 0.0001
-	opt.mom = 0.9
+    opt.lr = 0.0001
+    opt.mom = 0.9
 elif opt.optimizer=='adadelta':
-	opt.lr = 0.0002
-	opt.eps = 1e-6
-	opt.decay = 0.0
+    opt.lr = 0.0002
+    opt.eps = 1e-6
+    opt.decay = 0.0
 
 elif opt.optimizer=='rmsprop':
-	opt.lr = 0.0002
-	opt.eps = 1e-7
-	opt.decay = 0.0
-	opt.alpha = 0.995
+    opt.lr = 0.0002
+    opt.eps = 1e-7
+    opt.decay = 0.0
+    opt.alpha = 0.995
 else:
-	ValueError('Optimizer Not Supported')
+    ValueError('Optimizer Not Supported')
