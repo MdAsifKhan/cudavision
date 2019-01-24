@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import numpy as np
 
 class ModelEvaluator:
-    def __init__(self, model):
+    def __init__(self, model, threshold):
         '''
         model: instance of pytorch model class
         epochs: number of training epochs
@@ -30,7 +30,7 @@ class ModelEvaluator:
         self.loss = nn.MSELoss()
         self.optim = opt.optimizer
         self.resume = opt.resume
-        self.threshold = 0
+        self.threshold = threshold
         self.fdr_train = []
         self.RC_train = []
         self.accuracy_train = []
@@ -93,9 +93,7 @@ class ModelEvaluator:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
             output = self.model(train_data)
-            threshold = 0.7*train_labels.max()
-            if threshold>self.threshold:
-                self.threshold = threshold
+
             loss = self.loss(output, train_labels)
             
             if self.l2:
@@ -104,6 +102,7 @@ class ModelEvaluator:
             loss.backward()
             self.optimizer.step()
             peaks_predicted_train = peak_detection(self.threshold, output.cpu().detach().numpy().squeeze())
+            #TP_t, FP_t, TN_t, FN_t  = eval_alt(peaks_predicted_train, box_actual.numpy())
             TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, box_actual.numpy())
             TP += TP_t
             FP += FP_t
@@ -145,7 +144,7 @@ class ModelEvaluator:
                 loss_ = self.loss(output, test_labels)
                 peaks_predicted_test = peak_detection(self.threshold, output.cpu().numpy().squeeze())
                 #box_predicted = predict_box(peaks_predicted, box_actual.numpy())
-
+                #TP_test, FP_test, TN_test, FN_test = eval_alt(peaks_predicted_test, box_actual.numpy())
                 TP_test, FP_test, FN_test, TN_test = tp_fp_tn_fn(peaks_predicted_test, box_actual.numpy())
                 #FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)
                 TP += TP_test
@@ -179,8 +178,8 @@ class ModelEvaluator:
         print(self.model)
         for epoch in range(resume_epoch, self.epochs):
             self.train(epoch, trainloader, print_every=print_every)
+            self.test(epoch, testloader)
             if epoch%opt.save_every==0:
-                self.test(epoch, testloader)
                 save_model = {'threshold': self.threshold,
                                 'epoch': epoch, 
                                 'state_dict_model': self.model.state_dict()}
