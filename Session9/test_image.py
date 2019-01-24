@@ -66,13 +66,14 @@ def test_image(path, xml_path=None, epoch=15):
     '''
     img = Image.open(path)
     transform = transforms.Compose([
+            transforms.ColorJitter(brightness=0.3,
+                            contrast=0.4, saturation=0.4),
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
     img = transform(img)
     img = img.numpy()
     img = img[np.newaxis, ...]
     img = torch.Tensor(img)
-
     model = SweatyNet1(nc=1)
     if opt.use_gpu:
         model = model.cuda()

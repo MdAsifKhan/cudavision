@@ -105,7 +105,7 @@ class SweatyNet1(nn.Module):
                         nn.BatchNorm2d(16),
                         nn.ReLU()
 
-        )       
+        )
         self.layer17 = nn.Sequential(
                         nn.Conv2d(16, 16, 3, padding=1),
                         nn.BatchNorm2d(16),
@@ -114,7 +114,9 @@ class SweatyNet1(nn.Module):
         )
         self.layer18 = nn.Sequential(
                         nn.Conv2d(16, self.nc, 3, padding=1)
-        ) 
+        )
+        self.seq_part = None
+
     def forward(self,x):
         out1 = self.pool(self.layer1(x))
 
@@ -133,7 +135,6 @@ class SweatyNet1(nn.Module):
 
         out8 = self.layer15(self.layer14(self.layer13(out7)))
         out8 = upsample(out8, scale_factor=2, mode='bilinear', align_corners=True)
-        #out3 = F.pad(out3, pad=(2,2,2,2), mode='constant', value=0)
 
         out8 = torch.cat((out8, out3), 1)
 
@@ -150,7 +151,7 @@ class SweatyNet2(nn.Module):
                         nn.BatchNorm2d(8),
                         nn.ReLU()
         )
-        self.pool = nn.nn.MaxPool2d(2, stride=2)
+        self.pool = nn.MaxPool2d(2, stride=2)
         
         self.layer2 = nn.Sequential(
                         nn.Conv2d(8, 16, 3, padding=1),
@@ -406,7 +407,7 @@ class SweatyNet3(nn.Module):
         out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])        
         return out
 
-
+'''
 class ConvLSTM(nn.Module):
     def __init__(self, nc, map_size):
         super(ConvLSTM, self).__init__()
@@ -426,4 +427,8 @@ class ConvLSTM(nn.Module):
         out, _ = self.lstm(x)
         out = out[-1].view(batch_size, self.map_size[2], self.map_size[3])
 
+<<<<<<< HEAD
         return out
+=======
+        return out
+'''
