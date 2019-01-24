@@ -5,9 +5,10 @@ import  torch.nn.functional as F
 from torch.nn.functional import upsample
 
 class SweatyNet1(nn.Module):
-    def __init__(self, nc):
+    def __init__(self, nc, drop_p):
         super(SweatyNet1,self).__init__()
         self.nc = nc
+        self.drop_p = drop_p
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
                         nn.BatchNorm2d(8),
@@ -114,7 +115,9 @@ class SweatyNet1(nn.Module):
         )
         self.layer18 = nn.Sequential(
                         nn.Conv2d(16, self.nc, 3, padding=1)
-        ) 
+        )
+        self.drop = nn.Dropout(p=drop_p)
+
     def forward(self,x):
         out1 = self.pool(self.layer1(x))
 
@@ -137,13 +140,16 @@ class SweatyNet1(nn.Module):
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer18(self.layer17(self.layer16(out8)))
+        out = self.drop(out)
+        
         out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
         return out
 
 class SweatyNet2(nn.Module):
-    def __init__(self, nc):
+    def __init__(self, nc, drop_p):
         super(SweatyNet2,self).__init__()
         self.nc = nc
+        self.drop_p = drop_p
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
                         nn.BatchNorm2d(8),
@@ -229,8 +235,9 @@ class SweatyNet2(nn.Module):
                         nn.Conv2d(16, self.nc, 3, padding=1)
 
         ) 
+        self.drop = nn.Dropout(p=self.drop_p)
 
-    def forward(self,x):
+    def forward(self, x):
         out1 = self.pool(self.layer1(x))
         
         out2 = torch.cat((out1, self.layer2(out1)), 1)
@@ -247,19 +254,19 @@ class SweatyNet2(nn.Module):
         out7 = torch.cat((out5, out7), 1)
         out8 = self.layer11(self.layer10(self.layer9(out7)))
         out8 = upsample(out8, scale_factor=2, mode='bilinear', align_corners=True)
-        #out3 = F.pad(out3, pad=(2,2,2,2), mode='constant', value=0)
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer14(self.layer13(self.layer12(out8)))
+        out = self.drop(out)
         out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
         
         return out
 
 class SweatyNet3(nn.Module):
-    def __init__(self, nc):
+    def __init__(self, nc, drop_p):
         super(SweatyNet3, self).__init__()
         self.nc = nc
-        
+        self.drop_p = drop_p
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
                         nn.BatchNorm2d(8),
@@ -377,6 +384,7 @@ class SweatyNet3(nn.Module):
                         nn.Conv2d(16, self.nc, 3, padding=1)
 
         ) 
+        self.drop = nn.Dropout(p=self.drop_p)
 
     def forward(self, x):
         out1 = self.pool(self.layer1(x))
@@ -393,7 +401,6 @@ class SweatyNet3(nn.Module):
         out7 = self.layer14(self.layer13(self.layer12(self.layer11(self.layer10(out6)))))
         
         out7 = upsample(out7, scale_factor=2, mode='bilinear', align_corners=True)
-        pdb.set_trace()
 
         out7 = torch.cat((out5, out7), 1)
 
@@ -403,29 +410,6 @@ class SweatyNet3(nn.Module):
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer20(self.layer19(self.layer18(out8)))
-
+        out = self.drop(out)
         out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])        
         return out
-
-'''
-class ConvLSTM(nn.Module):
-    def __init__(self, nc, map_size):
-        super(ConvLSTM, self).__init__()
-        self.map_size = map_size
-        self.nc = nc
-        self.layer = nn.Sequential(
-                        nn.Conv2d(16, self.nc, 3, padding=0),
-                        nn.BatchNorm2d(self.nc),
-                        nn.ReLU()
-                    )
-       	self.lstm = nn.LSTM(self.map_size[0]*self.map_size[1], self.map_size[0]*self.map_size[1])
-
-    def forward(self, x):
-        x = self.layer(x)
-        batch_size, nc = x.shape[0], x.shape[1]
-        x = x.view(nc, batch_size, self.map_size[2]*self.map_size[3])
-        out, _ = self.lstm(x)
-        out = out[-1].view(batch_size, self.map_size[2], self.map_size[3])
-
-        return out
-'''

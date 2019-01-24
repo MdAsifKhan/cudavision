@@ -56,7 +56,7 @@ def test_image(path, xml_path=None, epoch=15):
 				prob_map_ = prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
 
 		plt.imshow(prob_map_,  cmap=cm.jet)
-		plt.savefig('{}/test_image_original.png'.format(opt.result_root))
+		plt.savefig('{}/test_image_original_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 
 
 	plt.cla()
@@ -80,7 +80,7 @@ def test_image(path, xml_path=None, epoch=15):
 		model = model.cuda()
 		img = img.cuda()
 
-	model_name = 'Model_lr_{}_opt_{}_epoch_{}'.format(opt.lr, opt.optimizer, epoch)
+	model_name = 'Model_lr_{}_opt_{}_epoch_{}_net_{}_drop_{}'.format(opt.lr, opt.optimizer, epoch, opt.net, opt.drop_p)
 	checkpoint, threshold = load_model(model_name)
 	model.load_state_dict(checkpoint)
 	model.eval()
@@ -94,13 +94,13 @@ def test_image(path, xml_path=None, epoch=15):
 		output = output.detach().numpy()
 		center, xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
 		plt.imshow(output[0],  cmap=cm.jet)
-		plt.savefig('{}/test_image_predicted.png'.format(opt.result_root))
+		plt.savefig('{}/test_image_predicted_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 		plt.cla()
 		plt.clf()
 
 		prob_map_predicted = prob_map(prob_map_predicted, xmin, ymin, xmax, ymax, center, radius)
 		plt.imshow(prob_map_predicted,  cmap=cm.jet)
-		plt.savefig('{}/test_image_predicted_postprocess.png'.format(opt.result_root))
+		plt.savefig('{}/test_image_predicted_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 		plt.cla()
 		plt.clf()
 

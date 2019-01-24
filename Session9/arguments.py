@@ -4,6 +4,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', required=False, help='soccer| sequence', default='soccer')
+parser.add_argument('--net', required=False, help='net1| net2| net3', default='net1')
 parser.add_argument('--data_root', required=False, help='path to dataset', default='')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batch_size', type=int, default=8, help='input batch size')
@@ -14,6 +15,7 @@ parser.add_argument('--optimizer', type=str, default='adam', help='optimizer to 
 parser.add_argument('--print_every', type=int, default=2, help='print checkpoints')
 parser.add_argument('--save_every', type=int, default=5, help='model checkpoints')
 
+parser.add_argument('--drop_p', type=float, default=0.0, help='Dropout Probability')
 parser.add_argument('--resume', type=int, default=0, help='epoch at which training resumes')
 parser.add_argument('--model_root', default='', help='folder to output model checkpoints')
 parser.add_argument('--result_root', default='', help='folder to output image checkpoints')
