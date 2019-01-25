@@ -39,7 +39,8 @@ def prepare_dataset(dataroot, annotation_file):
 		for line in training:
 			label, filename = line[0], line[1]
 			target_filename = '{}_{}'.format(filename[:-4], annotation_file[:-4])
-			shutil.copy(dataroot+'imageset_430/'+filename, dataroot+'SoccerData1/train_cnn/'+target_filename+ filename[-4:])
+			source_filename = '{}{}/{}'.format(dataroot, annotation_file[:-4], filename)
+			shutil.copy(source_filename, dataroot+'SoccerData1/train_cnn/'+target_filename+ filename[-4:])
 			if label=='label::ball':
 				width, height = line[2], line[3]
 				xmin, ymin, xmax, ymax = line[4], line[5], line[6], line[7]
@@ -51,7 +52,8 @@ def prepare_dataset(dataroot, annotation_file):
 		for line in test:
 			label, filename = line[0], line[1]
 			target_filename = '{}_{}'.format(filename[:-4], annotation_file[:-4])
-			shutil.copy(dataroot+'imageset_430/'+filename, dataroot+'SoccerData1/test_cnn/'+target_filename+filename[-4:])
+			source_filename = '{}{}/{}'.format(dataroot, annotation_file[:-4], filename)
+			shutil.copy(source_filename, dataroot+'SoccerData1/test_cnn/'+target_filename+filename[-4:])
 			if label=='label::ball':
 				width, height = line[2], line[3]
 				xmin, ymin, xmax, ymax = line[4], line[5], line[6], line[7]
@@ -61,7 +63,7 @@ def prepare_dataset(dataroot, annotation_file):
 				create_xml_file(dataroot_test, target_filename, obj_name, folder, width, height, xmin, ymin, xmax, ymax)
 
 if __name__=='__main__':
-	
+
 	dataroot = '../Session9/data/'
 	annotation_file1 = 'imageset_430.txt'
 	prepare_dataset(dataroot, annotation_file1)
