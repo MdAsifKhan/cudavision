@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', required=False, help='soccer| sequence', default='soccer')
 parser.add_argument('--net', required=False, help='net1| net2| net3', default='net1')
-parser.add_argument('--data_root', required=False, help='path to dataset', default='')
+parser.add_argument('--data_root', required=False, help='path to dataset', default='/home/local/stud/khan01/cudavision/Session9/SoccerData')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batch_size', type=int, default=8, help='input batch size')
 
@@ -17,8 +17,8 @@ parser.add_argument('--save_every', type=int, default=5, help='model checkpoints
 
 parser.add_argument('--drop_p', type=float, default=0.0, help='Dropout Probability')
 parser.add_argument('--resume', type=int, default=0, help='epoch at which training resumes')
-parser.add_argument('--model_root', default='', help='folder to output model checkpoints')
-parser.add_argument('--result_root', default='', help='folder to output image checkpoints')
+parser.add_argument('--model_root', default='/home/local/stud/khan01/cudavision/Session9/model/', help='folder to output model checkpoints')
+parser.add_argument('--result_root', default='/home/local/stud/khan01/cudavision/Session9/results', help='folder to output image checkpoints')
 parser.add_argument('--use_gpu', type=bool, default=True, help='Enable GPU Training')
 parser.add_argument('--manualSeed', type=int, default=123, help='manual seed')
 parser.add_argument('--image', required=False, help='test image path', default='')
@@ -28,12 +28,6 @@ opt = parser.parse_args()
 opt.dataset = 'soccer'
 opt.input_size = (640, 480)
 opt.rot_degree = 45
-if opt.data_root == '':
-	opt.data_root = '/home/local/stud/khan01/cudavision/Session9/SoccerData'
-if opt.model_root == '':
-	opt.model_root = '/home/local/stud/khan01/cudavision/Session9/model/'
-if opt.result_root == '':
-	opt.result_root = '/home/local/stud/khan01/cudavision/Session9/results'
 if opt.image == '':
 	opt.image = opt.data_root + '/test_cnn/' + '00292.jpg'
 if opt.xml == '':

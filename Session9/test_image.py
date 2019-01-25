@@ -11,7 +11,6 @@ from scipy.stats import multivariate_normal
 import pdb
 from utils import peak_detection, load_model, get_closest_peak
 import matplotlib.cm as cm
-from skimage.feature import peak_local_max
 import math
 
 def prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius):
@@ -74,8 +73,18 @@ def test_image(path, xml_path=None, epoch=15):
 	img = img.numpy()
 	img = img[np.newaxis, ...]
 	img = torch.Tensor(img)
-
-	model = SweatyNet1(nc=1)
+	nc = 1
+	if opt.net=='net1':
+		model = SweatyNet1(nc, opt.drop_p)
+		print('SweatyNet1')
+	elif opt.net=='net2':
+		model = SweatyNet2(nc, opt.drop_p)
+		print('SweatyNet2')
+	elif opt.net=='net3':
+		model = SweatyNet3(nc, opt.drop_p)
+		print('SweatyNet3')
+	else:
+		raise ValueError('Model not supported')
 	if opt.use_gpu:
 		model = model.cuda()
 		img = img.cuda()
