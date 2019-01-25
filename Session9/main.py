@@ -45,8 +45,10 @@ else:
     pass
 
 # Data Loader
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
-testloader = torch.utils.data.DataLoader(testset, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers,
+                                          drop_last=True)
+testloader = torch.utils.data.DataLoader(testset, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers,
+                                         drop_last=True)
 import pdb
 # Pytorch Cross Entropy Loss
 nc = 1

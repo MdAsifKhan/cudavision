@@ -7,6 +7,8 @@ import pdb
 from utils import batch_iou, performance_metric, peak_detection, predict_box, performance_metric_alternative, tp_fp_tn_fn
 import torch.nn.functional as F
 import numpy as np
+from logging_setup import logger
+
 
 class ModelEvaluator:
     def __init__(self, model):
@@ -27,7 +29,7 @@ class ModelEvaluator:
         self.test_loss = []
         self.iter_loss_train = []
         self.iter_loss_test = []
-        self.loss = nn.MSELoss()
+        self.loss = nn.MSELoss(reduction='sum')
         self.optim = opt.optimizer
         self.resume = opt.resume
         self.threshold = 0
@@ -87,47 +89,54 @@ class ModelEvaluator:
         loss_batch = 0
         if epoch % 100 == 0 and epoch > 0:
             self.adjust_lr(step=0.1)
-        TP, FP, FN, TN = 0, 0, 0, 0
-        for b_idx, (train_data, train_labels, box_actual) in enumerate(trainloader):
+        # TP, FP, FN, TN = 0, 0, 0, 0
+        for b_idx, (train_data, train_labels) in enumerate(trainloader):
+            train_data = train_data.float()
+            train_labels = train_labels.float()
             if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
-            output = self.model(train_data)
-            threshold = 0.7*train_labels.max()
+            if opt.seq_model == 'lstm':
+                output, (h, cc) = self.model(train_data)
+                loss = self.loss(output[0], train_labels)
+            if opt.seq_model == 'tcn':
+                output = self.model(train_data)
+                loss = self.loss(output, train_labels)
+
+            threshold = 0.7*train_data.max()
             if threshold>self.threshold:
                 self.threshold = threshold
-            loss = self.loss(output, train_labels)
-            
-            if self.l2:
-                loss = self.l2_regularization(loss, self.l2)
+
+            # if self.l2:
+            #     loss = self.l2_regularization(loss, self.l2)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            peaks_predicted_train = peak_detection(self.threshold, output.cpu().detach().numpy().squeeze())
-            TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, box_actual.numpy())
-            TP += TP_t
-            FP += FP_t
-            FN += FN_t
-            TN += TN_t
+            # peaks_predicted_train = peak_detection(self.threshold, output.cpu().detach().numpy().squeeze())
+            # TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, box_actual.numpy())
+            # TP += TP_t
+            # FP += FP_t
+            # FN += FN_t
+            # TN += TN_t
             if b_idx % opt.print_every == 0:
-                print('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4}'.
-                      format(epoch, b_idx * len(train_data),
-                             len(trainloader.dataset),
-                             100. * b_idx / len(trainloader), loss))
-            
+                logger.debug('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4}'.
+                             format(epoch, b_idx * len(train_data),
+                                    len(trainloader.dataset),
+                                    100. * b_idx / len(trainloader), loss))
+
             loss_ = loss.item()
             self.iter_loss_train.append(loss_)
             loss_batch += loss_
         
-        FDR_train, RC_train, accuracy_train = performance_metric_alternative(TP, FP, FN, TN)
-        self.fdr_train.append(FDR_train)
-        self.accuracy_train.append(accuracy_train)
-        self.RC_train.append(RC_train)
+        # FDR_train, RC_train, accuracy_train = performance_metric_alternative(TP, FP, FN, TN)
+        # self.fdr_train.append(FDR_train)
+        # self.accuracy_train.append(accuracy_train)
+        # self.RC_train.append(RC_train)
         
         loss_batch /= len(trainloader)
 
-        print('Epoch = {} Train TP {} FP {} TN {} FN {} '.format(epoch, TP, FP, TN, FN))
-        print('Train loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(loss_batch, FDR_train, RC_train, accuracy_train))
+        logger.debug('Epoch = {} '.format(epoch))
+        logger.debug('Train loss = {0}'.format(loss_batch))
         self.train_loss.append(loss_batch)
 
     def test(self, epoch, testloader):
@@ -138,10 +147,10 @@ class ModelEvaluator:
         TP, FP, FN, TN = 0, 0, 0, 0
         with torch.no_grad():
             batch_loss = 0
-            for test_data, test_labels, box_actual in testloader:
+            for b_idx, (test_data, test_labels, box_actual) in enumerate(testloader):
                 if self.use_gpu:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
-                output = self.model(test_data)
+                output = self.model.test(test_data)
                 loss_ = self.loss(output, test_labels)
                 peaks_predicted_test = peak_detection(self.threshold, output.cpu().numpy().squeeze())
                 #box_predicted = predict_box(peaks_predicted, box_actual.numpy())
@@ -162,8 +171,8 @@ class ModelEvaluator:
             self.accuracy_test.append(accuracy_test)
             self.RC_test.append(RC_test)
 
-            print('epoch {} Test TP {} FP {} TN {} FN {}'.format(epoch, TP, FP, TN, FN))            
-            print('Test loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(batch_loss, FDR_test, RC_test, accuracy_test))
+            logger.debug('epoch {} Test TP {} FP {} TN {} FN {}'.format(epoch, TP, FP, TN, FN))
+            logger.debug('Test loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(batch_loss, FDR_test, RC_test, accuracy_test))
 
             self.test_loss.append(batch_loss)
 
@@ -172,19 +181,20 @@ class ModelEvaluator:
         train and validate model
         '''
         resume_epoch = 0
-        if self.resume:
-            checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}.pth'.format(self.lr, self.optim, epoch))
-            self.model.load_state_dict(checkpoint)
-        print('Model')
-        print(self.model)
+        # if self.resume:
+        #     checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}.pth'.format(self.lr, self.optim, epoch))
+        #     self.model.load_state_dict(checkpoint)
+        logger.debug('Model')
+        logger.debug(str(self.model))
         for epoch in range(resume_epoch, self.epochs):
             self.train(epoch, trainloader, print_every=print_every)
-            if epoch%opt.save_every==0:
-                self.test(epoch, testloader)
+            self.test(epoch, testloader)
+            if epoch % opt.save_every==0:
                 save_model = {'threshold': self.threshold,
-                                'epoch': epoch, 
-                                'state_dict_model': self.model.state_dict()}
-                model_name = 'Model_lr_{}_opt_{}_epoch_{}'.format(self.lr, self.optim, epoch)
+                              'epoch': epoch,
+                              'state_dict_model': self.model.state_dict()}
+                model_name = '{}_lr_{}_opt_{}_epoch_{}'.format(opt.seq_save_model,
+                                                               self.lr, self.optim, epoch)
                 model_dir = opt.model_root + '/' + model_name
                 torch.save(save_model, model_dir)
 
@@ -212,8 +222,8 @@ class ModelEvaluator:
         plt.savefig('{}/loss_evaluation_iter'.format(opt.result_root))
         plt.cla()
         plt.clf()
-        plt.plot(range(len(self.fdr_train)), self.fdr_train,
-                 label='Training FDR')
+        # plt.plot(range(len(self.fdr_train)), self.fdr_train,
+        #          label='Training FDR')
         plt.plot(range(len(self.fdr_test)), self.fdr_test,
                      label='Testing FDR')
         plt.xlabel('Epoch')
@@ -222,9 +232,9 @@ class ModelEvaluator:
         plt.savefig('{}/FDR_evaluation_epoch'.format(opt.result_root))    
         plt.cla()
         plt.clf()
-        
-        plt.plot(range(len(self.RC_train)), self.RC_train,
-                 label='Training RC')
+        #
+        # plt.plot(range(len(self.RC_train)), self.RC_train,
+        #          label='Training RC')
         plt.plot(range(len(self.RC_test)), self.RC_test,
                      label='Testing RC')
         plt.xlabel('Epoch')
@@ -233,8 +243,8 @@ class ModelEvaluator:
         plt.savefig('{}/rc_evaluation_epoch'.format(opt.result_root))
         plt.cla()
         plt.clf()
-        plt.plot(range(len(self.accuracy_train)), self.accuracy_train,
-                 label='Training Acc')
+        # plt.plot(range(len(self.accuracy_train)), self.accuracy_train,
+        #          label='Training Acc')
         plt.plot(range(len(self.accuracy_test)), self.accuracy_test,
                      label='Testing Acc')
         plt.xlabel('Epoch')
