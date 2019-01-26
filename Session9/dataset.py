@@ -31,15 +31,16 @@ class SoccerDataSet:
 		for filename in tqdm(os.listdir(self.dataroot)):
 			name = filename[:-4]
 			if filename.endswith('.jpg'):
-				self.images.append(os.path.join(self.dataroot, filename))
 				if name in self.filenames:
+					self.images.append(filename)
 					idx = self.filenames.index(name)
 					self.targets.append(targets[idx])
 					self.box.append(box[idx].astype('float32'))
+				'''
 				else:
 					self.targets.append(np.zeros([120, 160], dtype='float32'))
 					self.box.append(np.array([0, 0, 0, 0], dtype='float32'))
-
+				'''
 	def __len__(self):
 		return len(self.targets)
 
