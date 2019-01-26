@@ -25,23 +25,25 @@ class SoccerDataSet:
             self.filenames = list(hf['filenames'].value)
             box = list(hf['ros'].value)
 
-        self.threshold = 0.7*targets.max()
+        self.threshold = 0.7 * targets.max()
         self.images, self.targets, self.box = [], [], []
         self.filenames = [filename.decode('utf-8') for filename in self.filenames]
         for filename in tqdm(os.listdir(self.dataroot)):
             name = filename[:-4]
             if filename.endswith('.jpg'):
-                self.images.append(filename)
                 if name in self.filenames:
+                    self.images.append(filename)
                     idx = self.filenames.index(name)
                     self.targets.append(targets[idx])
                     self.box.append(box[idx].astype('float32'))
+                '''
                 else:
                     self.targets.append(np.zeros([120, 160], dtype='float32'))
                     self.box.append(np.array([0, 0, 0, 0], dtype='float32'))
-
+                '''
     def __len__(self):
         return len(self.targets)
+
 
     def __getitem__(self, idx):
         img_name = self.images[idx]

@@ -7,6 +7,7 @@ import pdb
 from utils import batch_iou, performance_metric, peak_detection, predict_box, performance_metric_alternative, tp_fp_tn_fn
 import torch.nn.functional as F
 import numpy as np
+import h5py
 
 class ModelEvaluator:
     def __init__(self, model, threshold):
@@ -101,9 +102,12 @@ class ModelEvaluator:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            peaks_predicted_train = peak_detection(self.threshold, output.cpu().detach().numpy().squeeze())
+            output = output.cpu().detach().squeeze()
+            if len(output.shape)<3:
+                output = output.unsqueeze(0)
+            peaks_predicted_train, peaks_value_train = peak_detection(self.threshold, output.numpy())
             #TP_t, FP_t, TN_t, FN_t  = eval_alt(peaks_predicted_train, box_actual.numpy())
-            TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, box_actual.numpy())
+            TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, peaks_value_train, box_actual.numpy())
             TP += TP_t
             FP += FP_t
             FN += FN_t
@@ -142,10 +146,13 @@ class ModelEvaluator:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
                 output = self.model(test_data)
                 loss_ = self.loss(output, test_labels)
-                peaks_predicted_test = peak_detection(self.threshold, output.cpu().numpy().squeeze())
+                output = output.cpu().squeeze()
+                if len(output.shape)<3:
+                    output = output.unsqueeze(0)
+                peaks_predicted_test, peaks_value_test = peak_detection(self.threshold, output.numpy())
                 #box_predicted = predict_box(peaks_predicted, box_actual.numpy())
                 #TP_test, FP_test, TN_test, FN_test = eval_alt(peaks_predicted_test, box_actual.numpy())
-                TP_test, FP_test, FN_test, TN_test = tp_fp_tn_fn(peaks_predicted_test, box_actual.numpy())
+                TP_test, FP_test, FN_test, TN_test = tp_fp_tn_fn(peaks_predicted_test, peaks_value_test, box_actual.numpy())
                 #FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)
                 TP += TP_test
                 FP += FP_test
@@ -172,7 +179,7 @@ class ModelEvaluator:
         '''
         resume_epoch = 0
         if self.resume:
-            checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}.pth'.format(self.lr, self.optim, epoch))
+            checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}_net_{}_drop_{}.pth'.format(self.lr, self.optim, epoch, opt.net, opt.drop_p))
             self.model.load_state_dict(checkpoint)
         print('Model')
         print(self.model)
@@ -183,7 +190,7 @@ class ModelEvaluator:
                 save_model = {'threshold': self.threshold,
                                 'epoch': epoch, 
                                 'state_dict_model': self.model.state_dict()}
-                model_name = 'Model_lr_{}_opt_{}_epoch_{}'.format(self.lr, self.optim, epoch)
+                model_name = 'Model_lr_{}_opt_{}_epoch_{}_net_{}_drop_{}'.format(self.lr, self.optim, epoch, opt.net, opt.drop_p)
                 model_dir = opt.model_root + '/' + model_name
                 torch.save(save_model, model_dir)
 
@@ -198,7 +205,7 @@ class ModelEvaluator:
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.legend()
-        plt.savefig('{}/loss_evaluation_epoch'.format(opt.result_root))
+        plt.savefig('{}/loss_evaluation_epoch_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
         plt.cla()
         plt.clf()
         plt.plot(range(len(self.iter_loss_train)), self.iter_loss_train,
@@ -208,7 +215,7 @@ class ModelEvaluator:
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.legend()
-        plt.savefig('{}/loss_evaluation_iter'.format(opt.result_root))
+        plt.savefig('{}/loss_evaluation_iter_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
         plt.cla()
         plt.clf()
         plt.plot(range(len(self.fdr_train)), self.fdr_train,
@@ -218,7 +225,7 @@ class ModelEvaluator:
         plt.xlabel('Epoch')
         plt.ylabel('FDR')
         plt.legend()
-        plt.savefig('{}/FDR_evaluation_epoch'.format(opt.result_root))    
+        plt.savefig('{}/FDR_evaluation_epoch_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))   
         plt.cla()
         plt.clf()
         
@@ -229,7 +236,7 @@ class ModelEvaluator:
         plt.xlabel('Epoch')
         plt.ylabel('RC')
         plt.legend()
-        plt.savefig('{}/rc_evaluation_epoch'.format(opt.result_root))
+        plt.savefig('{}/rc_evaluation_epoch_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
         plt.cla()
         plt.clf()
         plt.plot(range(len(self.accuracy_train)), self.accuracy_train,
@@ -239,7 +246,7 @@ class ModelEvaluator:
         plt.xlabel('Epoch')
         plt.ylabel('Accuracy')
         plt.legend()
-        plt.savefig('{}/accuracy_evaluation_epoch'.format(opt.result_root)) 
+        plt.savefig('{}/accuracy_evaluation_epoch_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
                  
     def load_model(self, model_name):
         '''
@@ -249,3 +256,13 @@ class ModelEvaluator:
         checkpoint = torch.load(model_dir)
         model, epoch = checkpoint['state_dict_model'], checkpoint['epoch']
         return model, epoch
+
+    def save_output(self):
+        filename = '{}/evaluation_epoch_{}_drop_{}.h5'.format(opt.result_root, opt.net, opt.drop_p)
+        with h5py.File(filename, 'w') as hf:
+            hf.create_dataset('RC_train', data = self.RC_train)
+            hf.create_dataset('RC_test', data = self.RC_test)
+            hf.create_dataset('fdr_train', data = self.fdr_train)
+            hf.create_dataset('fdr_test', data = self.fdr_test)
+            hf.create_dataset('accuracy_train', data = self.accuracy_train)
+            hf.create_dataset('accuracy_test', data = self.accuracy_test)
