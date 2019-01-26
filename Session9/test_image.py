@@ -11,7 +11,6 @@ from scipy.stats import multivariate_normal
 import pdb
 from utils import peak_detection, load_model, get_closest_peak
 import matplotlib.cm as cm
-from skimage.feature import peak_local_max
 import math
 
 def prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius):
@@ -55,52 +54,64 @@ def test_image(path, xml_path=None, epoch=15):
                 radius = min((xmax-xmin)/2, (ymax-ymin)/2)
                 prob_map_ = prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
 
-        plt.imshow(prob_map_,  cmap=cm.jet)
-        plt.savefig('{}/test_image_original.png'.format(opt.result_root))
+		plt.imshow(prob_map_,  cmap=cm.jet)
+		plt.savefig('{}/test_image_original_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 
 
-    plt.cla()
-    plt.clf()
-    '''
-    predicted map
-    '''
-    img = Image.open(path)
-    transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
-    img = transform(img)
-    img = img.numpy()
-    img = img[np.newaxis, ...]
-    img = torch.Tensor(img)
+	plt.cla()
+	plt.clf()
+	'''
+	predicted map
+	'''
+	img = Image.open(path)
+	transform = transforms.Compose([
+			transforms.ColorJitter(brightness=0.3,
+							contrast=0.4, saturation=0.4),		
+			transforms.ToTensor(),
+			transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
+	img = transform(img)
+	img = img.numpy()
+	img = img[np.newaxis, ...]
+	img = torch.Tensor(img)
+	nc = 1
+	if opt.net=='net1':
+		model = SweatyNet1(nc, opt.drop_p)
+		print('SweatyNet1')
+	elif opt.net=='net2':
+		model = SweatyNet2(nc, opt.drop_p)
+		print('SweatyNet2')
+	elif opt.net=='net3':
+		model = SweatyNet3(nc, opt.drop_p)
+		print('SweatyNet3')
+	else:
+		raise ValueError('Model not supported')
+	if opt.use_gpu:
+		model = model.cuda()
+		img = img.cuda()
 
-    model = SweatyNet1(nc=1)
-    if opt.use_gpu:
-        model = model.cuda()
-        img = img.cuda()
+	model_name = 'Model_lr_{}_opt_{}_epoch_{}_net_{}_drop_{}'.format(opt.lr, opt.optimizer, epoch, opt.net, opt.drop_p)
+	checkpoint, threshold = load_model(model_name)
+	model.load_state_dict(checkpoint)
+	model.eval()
 
-    model_name = 'Model_lr_{}_opt_{}_epoch_{}'.format(opt.lr, opt.optimizer, epoch)
-    checkpoint, threshold = load_model(model_name)
-    model.load_state_dict(checkpoint)
-    model.eval()
+	with torch.no_grad():
+		prob_map_predicted = np.zeros([120, 160], dtype='float32')
+		output = model(img).cpu()
+		output = output.squeeze()
+		if len(output.shape)<3:
+			output = output.unsqueeze(0)
+		output = output.detach().numpy()
+		center, xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
+		plt.imshow(output[0],  cmap=cm.jet)
+		plt.savefig('{}/test_image_predicted_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
+		plt.cla()
+		plt.clf()
 
-    with torch.no_grad():
-        prob_map_predicted = np.zeros([120, 160], dtype='float32')
-        output = model(img).cpu()
-        output = output.squeeze()
-        if len(output.shape)<3:
-            output = output.unsqueeze(0)
-        output = output.detach().numpy()
-        center, xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
-        plt.imshow(output[0],  cmap=cm.jet)
-        plt.savefig('{}/test_image_predicted.png'.format(opt.result_root))
-        plt.cla()
-        plt.clf()
-
-        prob_map_predicted = prob_map(prob_map_predicted, xmin, ymin, xmax, ymax, center, radius)
-        plt.imshow(prob_map_predicted,  cmap=cm.jet)
-        plt.savefig('{}/test_image_predicted_postprocess.png'.format(opt.result_root))
-        plt.cla()
-        plt.clf()
+		prob_map_predicted = prob_map(prob_map_predicted, xmin, ymin, xmax, ymax, center, radius)
+		plt.imshow(prob_map_predicted,  cmap=cm.jet)
+		plt.savefig('{}/test_image_predicted_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
+		plt.cla()
+		plt.clf()
 
 
 if __name__=='__main__':

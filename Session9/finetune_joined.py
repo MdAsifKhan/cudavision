@@ -65,8 +65,8 @@ testloader = torch.utils.data.DataLoader(testset,
 #                  name=opt.seq_model)
 
 
-opt.lr = 1e-4
-modeleval = ModelEvaluator(model)
+opt.lr = 1e-3
+modeleval = ModelEvaluator(model, 0.5)
 modeleval.evaluator(trainloader, testloader)
 modeleval.plot_loss()
 

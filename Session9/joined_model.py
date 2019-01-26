@@ -19,7 +19,7 @@ from tcn import TCN
 class JoinedModel(nn.Module):
     def __init__(self):
         super(JoinedModel, self).__init__()
-        self.sweaty = SweatyNet1(1)
+        self.sweaty = SweatyNet1(1, opt.drop_p)
         if opt.seq_model == 'lstm':
             self.seq = LSTM()
         if opt.seq_model == 'tcn':

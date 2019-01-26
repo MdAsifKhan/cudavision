@@ -7,26 +7,26 @@ from dataset import SeqSoccerDataSet
 
 
 trainset = SeqSoccerDataSet(data_path=opt.data_root + '/seq_train_cnn', map_file= 'train_maps', 
-									transform= transforms.Compose([
-									#transforms.RandomResizedCrop(opt.input_size[1]),	
-									transforms.RandomHorizontalFlip(),	
-									transforms.RandomRotation(opt.rot_degree),
-									transforms.ColorJitter(brightness=0.4,
-													contrast=0.4, saturation=0.4),
-									transforms.ToTensor(),
-									transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-			]))
+                                    transform= transforms.Compose([
+                                    #transforms.RandomResizedCrop(opt.input_size[1]),
+                                    transforms.RandomHorizontalFlip(),
+                                    transforms.RandomRotation(opt.rot_degree),
+                                    transforms.ColorJitter(brightness=0.4,
+                                                    contrast=0.4, saturation=0.4),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ]))
 
 testset = SeqSoccerDataSet(data_path=opt.data_root +'/seq_test_cnn', map_file='test_maps',
-									transform= transforms.Compose([
-									#transforms.RandomResizedCrop(opt.input_size[1]),	
-									transforms.RandomHorizontalFlip(),	
-									transforms.RandomRotation(opt.rot_degree),
-									transforms.ColorJitter(brightness=0.4,
-													contrast=0.4, saturation=0.4),
-									transforms.ToTensor(),
-									transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-			]))
+                                    transform= transforms.Compose([
+                                    #transforms.RandomResizedCrop(opt.input_size[1]),
+                                    transforms.RandomHorizontalFlip(),
+                                    transforms.RandomRotation(opt.rot_degree),
+                                    transforms.ColorJitter(brightness=0.4,
+                                                    contrast=0.4, saturation=0.4),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ]))
 
 
 
@@ -38,7 +38,7 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=opt.batch_size, shu
 nc = 1
 model = SweatyNet1(nc)
 if opt.use_gpu:
-	model = model.cuda()
+    model = model.cuda()
 
 
 epoch = 20 #Checkpoint model to load
