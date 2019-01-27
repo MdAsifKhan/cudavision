@@ -14,6 +14,7 @@ import re
 import h5py
 import tqdm
 from collections import defaultdict
+from PIL import Image
 
 from util_functions import join_data
 from logging_setup import logger
@@ -84,38 +85,63 @@ class BallDataset(Dataset):
 
 
 class RealBallDataset(Dataset):
-    def __init__(self, data_path, map_file, transform=None):
+    def __init__(self, data_path, map_file, transform=None, prediction=20):
         self.dataroot = data_path
         self.map_file = map_file
         self.transform = transform
 
+        if opt.seq_model == 'lstm':
+            self.prediction = prediction
+        if opt.seq_model == 'tcn':
+            self.prediction = 1
+
         with h5py.File(self.dataroot + '/' + self.map_file,'r') as hf:
             targets = hf['prob_maps'].value
             targets = np.array(targets).astype('float32')
-            self.filenames = list(hf['filenames'].value)
+            filenames = list(hf['filenames'].value)
             box = list(hf['ros'].value)
 
         self.threshold = 0.7 * targets.max()
         self.images, self.targets, self.box = [], [], []
-        self.filenames = [filename.decode('utf-8') for filename in self.filenames]
-        for filename in tqdm(os.listdir(self.dataroot)):
-            name = filename[:-4]
-            if filename.endswith('.jpg'):
-                if name in self.filenames:
-                    self.images.append(filename)
-                    idx = self.filenames.index(name)
-                    self.targets.append(targets[idx])
-                    self.box.append(box[idx].astype('float32'))
-                '''
-                else:
-                    self.targets.append(np.zeros([120, 160], dtype='float32'))
-                    self.box.append(np.array([0, 0, 0, 0], dtype='float32'))
-                '''
+        filenames = [filename.decode('utf-8') for filename in filenames]
+
+        self._read_seq()
+        for ball_idx, i in self.ball_frames:
+            ball_filename, _ = self.balls[ball_idx][i]
+            self.images.append(ball_filename + '.jpg')
+            idx = filenames.index(ball_filename)
+            self.targets.append(targets[idx])
+            self.box.append(box[idx].astype('float32'))
+
+    def _read_seq(self):
+        self.balls = {}
+        self.ball_frames = []
+        self.filenames = []
+        for filename in os.listdir(opt.seq_real_balls):
+            if 'ball' in filename:
+                # balls_files.append(os.path.join(opt.seq_real_balls, filename))
+                # ball_filename = os.path.join(opt.seq_real_balls, filename)
+                ball_idx = len(self.balls)
+                with open(os.path.join(opt.seq_real_balls, filename), 'r') as f:
+                    ball = []
+                    for line in f:
+                        line = map(lambda x: int(x), line.split())
+                        ball_filename = 'frame%04d_imageset_%d' % (line[0], line[1])
+                        ball_center = line[-2:]
+                        ball.append([ball_filename, ball_center])
+                        self.filenames.append(ball_filename)
+                    self.balls[ball_idx] = ball
+                    for i in range(len(ball) - self.prediction):
+                        self.ball_frames.append([ball_idx, i])
+
     def __len__(self):
-        return len(self.targets)
+        return len(self.ball_frames)
 
 
     def __getitem__(self, idx):
+        ball_idx, frame = self.ball_frames[idx]
+        if frame > opt.hist:
+            seq = self.balls[]
         img_name = self.images[idx]
         img_path = os.path.join(self.dataroot, img_name)
         img = Image.open(img_path)

@@ -27,7 +27,7 @@ class Ball:
         self.valid = True
 
     def next_frame(self, x, y, frame):
-        if len(self.x) == 0 or frame - self.frames[-1] < 4:
+        if len(self.x) == 0 or abs(self.frames[-1] - frame) < 4:
             self.x.append(x)
             self.y.append(y)
             self.frames.append(frame)
@@ -38,6 +38,9 @@ class Ball:
 
     def centers(self):
         coord = []
+        self.frames = list(reversed(self.frames))
+        self.x = list(reversed(self.x))
+        self.y = list(reversed(self.y))
         for fidx, frame in enumerate(self.frames[:-1]):
             coord.append([frame, self.x[fidx], self.y[fidx]])
             for fidx_fake in range(self.frames[fidx + 1] - frame - 1):
@@ -45,28 +48,30 @@ class Ball:
             # coord.append([[-1, -1]] * (self.frames[fidx + 1] - frame))
         coord.append([self.frames[-1], self.x[-1], self.y[-1]])
         coord = np.array(coord).reshape((-1, 3))
-        # coord[:, 0] = coord[:, 0] * opt.map_size_x / 640
-        # coord[:, 1] = coord[:, 1] * opt.map_size_y / 480
-        coord = np.hstack(([self.filename] * coord.shape[0], coord))
+        coord[:, 1] = coord[:, 1] * opt.map_size_x / 640
+        coord[:, 2] = coord[:, 2] * opt.map_size_y / 480
+        coord = np.hstack((np.asarray([self.filename] * coord.shape[0]).reshape(-1, 1), coord))
         return coord
 
 
 balls = []
-for filename in os.listdir('SoccerDataSeq'):
+path = 'SoccerDataSeq'
+for filename in os.listdir(path):
     if not filename.endswith('txt'):
         continue
-    with open(os.path.abspath(filename), 'r') as f:
+    with open(os.path.join(path, filename), 'r') as f:
+        filename = int(filename.split('.')[0][-3:])
         ball = Ball(filename)
         for line_idx, line in enumerate(f):
             if not line.startswith('label::ball'):
                 continue
             line = line.split('|')
             frame = int(re.search(r'frame(\d*).jpg', line[1]).group(1))
-            y,x = list(map(lambda x: int(x), line[-4:-2]))
+            y,x = list(map(lambda x: int(x.split('.')[0]), line[-4:-2]))
             if not ball.next_frame(x, y, frame):
                 if ball.valid:
                     balls.append(ball)
-                ball = Ball()
+                ball = Ball(filename)
 
 
 for ball_idx, ball in enumerate(balls):
