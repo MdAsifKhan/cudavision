@@ -9,10 +9,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.stats import multivariate_normal
 import pdb
-from utils import peak_detection, load_model, get_closest_peak
+from utils import peak_detection, load_model, within_radius
 import matplotlib.cm as cm
 import math
-
+import cv2
 def prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius):
 	'''
 	get probability map based on center and radius
@@ -33,7 +33,7 @@ def get_center(output_nn, threshold, radius):
 	return center, xmin, ymin, xmax, ymax 
 
 
-def test_image(path, xml_path=None, epoch=15):
+def test_image(path, xml_path=None):
 	'''
 	Original Map
 	'''
@@ -89,31 +89,39 @@ def test_image(path, xml_path=None, epoch=15):
 		model = model.cuda()
 		img = img.cuda()
 
-	model_name = 'Model_lr_{}_opt_{}_epoch_{}_net_{}_drop_{}'.format(opt.lr, opt.optimizer, epoch, opt.net, opt.drop_p)
-	checkpoint, threshold = load_model(model_name)
+	model_name = 'Model_lr_{}_opt_{}_epoch_{}_net_{}_drop_{}'.format(opt.lr, opt.optimizer, opt.test_epoch, opt.net, opt.drop_p)
+	checkpoint, min_radius, threshold = load_model(model_name)
 	model.load_state_dict(checkpoint)
 	model.eval()
 
 	with torch.no_grad():
 		prob_map_predicted = np.zeros([120, 160], dtype='float32')
 		output = model(img).cpu()
-		output = output.squeeze()
-		if len(output.shape)<3:
-			output = output.unsqueeze(0)
-		output = output.detach().numpy()
-		center, xmin, ymin, xmax, ymax  = get_center(output, threshold, radius)
-		plt.imshow(output[0],  cmap=cm.jet)
+		output = output.squeeze().detach().numpy()
+		plt.imshow(output,  cmap=cm.jet)
 		plt.savefig('{}/test_image_predicted_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 		plt.cla()
 		plt.clf()
 
-		prob_map_predicted = prob_map(prob_map_predicted, xmin, ymin, xmax, ymax, center, radius)
-		plt.imshow(prob_map_predicted,  cmap=cm.jet)
+		binary_map = (output>0.1).astype(np.uint8)
+		contours = cv2.findContours(binary_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+		img = np.zeros(output.shape, np.uint8)
+		if len(contours)>0:
+			contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
+			area, biggest_contour = max(contour_sizes, key=lambda x: x[0])
+			cv2.drawContours(img, [biggest_contour], -1, (1), cv2.FILLED)
+			processed_map = output * img
+			predicted_center = peak_detection(processed_map, threshold)
+		else:
+			processed_map = output * img
+			area = 0
+			predicted_center = (-1, -1)
+
+		plt.imshow(processed_map,  cmap=cm.jet)
 		plt.savefig('{}/test_image_predicted_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 		plt.cla()
 		plt.clf()
 
 
 if __name__=='__main__':
-	epoch = 95
 	test_image(opt.image, opt.xml)
