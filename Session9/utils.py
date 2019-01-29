@@ -2,54 +2,8 @@ import numpy as np
 import pdb
 from arguments import opt
 import torch
+import cv2
 
-def batch_iou(a, b, epsilon=1e-5):
-	""" 
-	http://ronny.rest/tutorials/module/localization_001/iou/
-
-	Given two arrays `a` and `b` where each row contains a bounding
-	box defined as a list of four numbers:
-		[x1,y1,x2,y2]
-	where:
-		x1,y1 represent the upper left corner
-		x2,y2 represent the lower right corner
-		It returns the Intersect of Union scores for each corresponding
-		pair of boxes.
-
-	Args:
-		a:			(numpy array) each row containing [x1,y1,x2,y2] coordinates
-		b:			(numpy array) each row containing [x1,y1,x2,y2] coordinates
-		epsilon:	(float) Small value to prevent division by zero
-
-	Returns:
-		(numpy array) The Intersect of Union scores for each pair of bounding
-		boxes.
-	"""
-	# COORDINATES OF THE INTERSECTION BOXES
-	x1 = np.array([a[:, 0], b[:, 0]]).max(axis=0)
-	y1 = np.array([a[:, 1], b[:, 1]]).max(axis=0)
-	x2 = np.array([a[:, 2], b[:, 2]]).min(axis=0)
-	y2 = np.array([a[:, 3], b[:, 3]]).min(axis=0)
-
-	# AREAS OF OVERLAP - Area where the boxes intersect
-	width = (x2 - x1)
-	height = (y2 - y1)
-
-	# handle case where there is NO overlap
-	width[width < 0] = 0
-	height[height < 0] = 0
-
-	area_overlap = width * height
-
-	# COMBINED AREAS
-	area_a = (a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1])
-	area_b = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
-	area_combined = area_a + area_b - area_overlap
-
-	# RATIO OF AREA OF OVERLAP OVER COMBINED AREA
-	iou = area_overlap / (area_combined + epsilon)
-	
-	return iou
 
 def predict_box(peaks_predicted, box_actual):
 	'''
@@ -67,39 +21,22 @@ def predict_box(peaks_predicted, box_actual):
 def within_radius(x, y, x_p, y_p, radius):
 	return (abs(y-y_p)<=radius and abs(x-x_p)<=radius)
 
-def tp_fp_tn_fn(peaks_batch, peaks_value, box_actual, radius=5):
 
-	centers = []
-	for box in box_actual:
-		xmin, ymin = box[0], box[1]
-		xmax, ymax = box[2], box[3]
-		center = [(ymax+ymin)/2, (xmax+xmin)/2]
-		centers.append(center)
+def tp_fp_tn_fn(peaks_batch, peaks_value, centers, radius=5):
+	'''
+	'''
 	TP, FP, FN, TN = 0, 0, 0, 0
 	for peak, peak_value, center in zip(peaks_batch, peaks_value, centers):
 		y, x = center[0], center[1]
-		#y_p, x_p = get_closest_peak(x, y, peaks)
 		y_p, x_p = peak[0], peak[1]
-	#for peak, center in zip(peaks, centers):
-		# center = [0, 0] if there is no ball in an image
-		# peak = [0, 0] if predicted map is zero
-		#y, x = center[0], center[1]
-		'''
-		if y==0 and x==0 and peak_value<=1e-4:
+		if (y==0 and x==0) and (y_p==0 and x_p==0):
 			TN += 1
-		elif (y!=0 and x!=0) and within_radius(x, y, x_p, y_p, radius):
-			TP += 1
-		elif not within_radius(x, y, x_p, y_p, radius):
+		elif (y==0 and x==0) and (y_p!=0 or x_p!=0) and within_radius(x, y, x_p, y_p, radius):
 			FP += 1
-		else:
-			FN += 1
-		'''
-		if peak_value<=1e-4 and not within_radius(x, y, x_p, y_p, radius):
-			FN += 1
 		elif within_radius(x, y, x_p, y_p, radius):
 			TP += 1
 		else:
-			FP += 1
+			FN += 1
 	return TP, FP, FN, TN
 
 def get_closest_peak(x, y, peaks):
@@ -112,7 +49,7 @@ def get_closest_peak(x, y, peaks):
 			ball_peak = (y_p, x_p)
 	return ball_peak
 
-def performance_metric_alternative(TP, FP, FN, TN):
+def performance_metric(TP, FP, FN, TN):
 	
 	accuracy = (TP+TN)/(TP+TN+FP+FN)
 	if FP==0 and TP==0:
@@ -125,50 +62,63 @@ def performance_metric_alternative(TP, FP, FN, TN):
 		RC = TP/(TP + FN)
 	return FDR, RC, accuracy
 
-def performance_metric(box_actual, box_predicted):
-	'''
-	Performance Metric based on predicted peaks
-	'''
 
-	iou = batch_iou(box_actual, box_predicted)
-	TP = iou>0.5
-	FP = iou<=0.5
-	FN = iou<=1e-5
-
-	accuracy = TP.sum()/len(TP)
-	FDR = FP.sum()/(FP.sum() + TP.sum())
-	RC = TP.sum()/(TP.sum() + FN.sum())
-
-	return FDR, RC, accuracy
-
-def peak_detection(threshold, maps, radius=5):
+def peak_detection(map_, threshold):
 	'''
 	peak detection on predicted score
 	'''
-	peaks = []
-	peaks_value = []
-	for map_ in maps:
-		#peaks_ = []
-		peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-		max_value = map_[peak]
-		#peaks_.append(peak)
-		while max_value>=threshold:
-			map_[max(0, int(peak[0]-radius)):min(int(peak[0]+1+radius), map_.shape[0]), 
-					max(0, int(peak[1]-radius)):min(int(peak[1]+1+radius), map_.shape[1])] = 0
+	peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
+	while map_[peak]>=threshold:
+		map_[peak] = 0
+		peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
+	return peak
 
-			peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-			max_value = map_[peak]
-			#peaks_.append(peak)
-		peaks.append(peak)
-		peaks_value.append(max_value)
-	return peaks, peaks_value
-
-def load_model(model_name, key='state_dict_model', thresh='threshold'):
+def load_model(model_name, key='state_dict_model', min_radius='min_radius', threshold='threshold'):
 	'''
 	get checkpoint of trained model and threshold
 	'''
 	model_dir = opt.model_root + model_name
 	checkpoint = torch.load(model_dir)
-	checkpoint, threshold = checkpoint[key], checkpoint[thresh]
+	checkpoint, min_radius, threshold = checkpoint[key], checkpoint[min_radius], checkpoint[threshold]
+
+	return checkpoint, min_radius, threshold
+
+
+def post_porcessing(maps, threshold):
+
+	processed_maps, predicted_centers, maps_area = [], [], []
+	for map_ in maps:
+		binary_map = (map_>0.1).astype(np.uint8)
+		contours = cv2.findContours(binary_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+		img = np.zeros(map_.shape, np.uint8)
+		if len(contours)>0:
+			contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
+			area, biggest_contour = max(contour_sizes, key=lambda x: x[0])
+			cv2.drawContours(img, [biggest_contour], -1, (1), cv2.FILLED)
+
+			apply_map = map_ * img
+			processed_maps.append(apply_map)
+			cx, cy = peak_detection(apply_map, threshold)
+			predicted_centers.append((cx, cy))
+			maps_area.append(area)
+		else:
+			apply_map = map_ * img
+			processed_maps.append(apply_map)
+			maps_area.append(0)
+			predicted_centers.append((-1, -1))
+	return processed_maps, predicted_centers, maps_area
+
+def tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area, min_radius):
 	
-	return checkpoint, threshold
+	minm_area = min_radius**2
+	TP, FP, TN, FN = 0, 0, 0, 0
+	for area, (a_x, a_y), (p_x, p_y) in zip(maps_area, actual_centers, predicted_centers):
+		if a_x==-1 and a_y==-1 and (area<minm_area or (p_x==-1 and p_y==-1)):
+			TN += 1
+		elif (a_x>=0 and a_y>=0) and area<minm_area:
+			FN += 1
+		elif (a_x>=0 or a_y>=0) and area>=minm_area and within_radius(a_x, a_y, p_x, p_y, min_radius):
+			TP += 1
+		else:
+			FP +=1
+	return TP, FP, TN, FN
