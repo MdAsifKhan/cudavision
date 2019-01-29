@@ -17,7 +17,8 @@ class ProbMap:
 		self.dataroot = dataroot
 		self.prob_maps = []
 		self.image_name = []
-		self.box = []
+		self.centers = []
+		self.min_radius = 0
 
 	def create_prob_map(self):
 		for filename in tqdm(os.listdir(self.dataroot)):
@@ -30,19 +31,22 @@ class ProbMap:
 					tree['annotation']['object'] = [tree['annotation']['object']]
 			
 				prob_map_ = np.zeros([120, 160], dtype='float32')
-				box = np.array([0, 0, 0, 0])
+				center = np.array([-1, -1])
+				min_radius = 1200
 				for object_ in tree['annotation']['object']:
 					if object_['name']=='ball':
 						bndbox = object_['bndbox']
 						xmin, ymin = int(bndbox['xmin'])/4, int(bndbox['ymin'])/4
 						xmax, ymax = int(bndbox['xmax'])/4, int(bndbox['ymax'])/4
-						center = [(ymax+ymin)/2, (xmax+xmin)/2]
+						center = np.array([(ymax+ymin)/2, (xmax+xmin)/2])
 						radius = min((xmax-xmin)/2, (ymax-ymin)/2)
+						min_radius = min(min_radius, radius)
 						prob_map_ = self.prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
-						box = np.array([xmin, ymin, xmax, ymax])	
-				self.prob_maps.append(prob_map_)
+
+				self.prob_maps.append(prob_map_*100)
 				self.image_name.append(name)
-				self.box.append(box)
+				self.centers.append(center)
+				self.min_radius = min_radius
 
 	def prob_map(self, prob_map_, xmin, ymin, xmax, ymax, center, radius=4):
 		for x in range(int(ymin), min(math.ceil(ymax), prob_map_.shape[0])):
@@ -52,13 +56,13 @@ class ProbMap:
 
 	def save_prob_map(self, data_file):
 		prob_maps = np.asarray(self.prob_maps, dtype='float32')
-		self.box = np.asarray(self.box)
+		self.centers = np.asarray(self.centers, dtype='float32')
 		with h5py.File(self.dataroot + '/' + data_file, 'w') as hf:
 			hf.create_dataset('prob_maps', data = prob_maps)
 			self.image_name = [n.encode('ascii', 'ignore') for n in self.image_name]
 			hf.create_dataset('filenames', data = self.image_name)
-			hf.create_dataset('ros', data = self.box)
-
+			hf.create_dataset('centers', data = self.centers)
+			hf.create_dataset('min_radius', data=self.min_radius)
 
 if __name__=='__main__':
 

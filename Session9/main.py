@@ -48,9 +48,11 @@ else:
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers)
 testloader = torch.utils.data.DataLoader(testset, batch_size=opt.batch_size, shuffle=False, num_workers=opt.workers)
 import pdb
-# Pytorch Cross Entropy Loss
+
 nc = 1
 threshold = trainset.threshold
+min_radius = trainset.min_radius
+
 if opt.net=='net1':
 	model = SweatyNet1(nc, opt.drop_p)
 	print('SweatyNet1')
@@ -63,7 +65,7 @@ elif opt.net=='net3':
 else:
 	raise ValueError('Model not supported')
 
-modeleval = ModelEvaluator(model, threshold)
+modeleval = ModelEvaluator(model, min_radius, threshold)
 modeleval.evaluator(trainloader, testloader)
 modeleval.save_output()
 modeleval.plot_loss()
