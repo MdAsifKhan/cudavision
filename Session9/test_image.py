@@ -22,16 +22,6 @@ def prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius):
 			prob_map_[x, y] = multivariate_normal.pdf([x, y], center, [radius, radius])
 	return prob_map_
 
-def get_center(output_nn, threshold, radius):
-	'''
-	Get center of ball using peak detection algorithm
-	'''
-	peak_ = peak_detection(threshold, output_nn)
-	xmin, ymin = peak_[0][1] - radius, peak_[0][0] - radius
-	xmax, ymax = peak_[0][1] + radius, peak_[0][0] + radius
-	center = [(ymax+ymin)/2, (xmax+xmin)/2]
-	return center, xmin, ymin, xmax, ymax 
-
 
 def test_image(path, xml_path=None):
 	'''
@@ -57,9 +47,8 @@ def test_image(path, xml_path=None):
 		plt.imshow(prob_map_,  cmap=cm.jet)
 		plt.savefig('{}/test_image_original_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 
-
-	plt.cla()
-	plt.clf()
+		plt.cla()
+		plt.clf()
 	'''
 	predicted map
 	'''
@@ -118,10 +107,24 @@ def test_image(path, xml_path=None):
 			predicted_center = (-1, -1)
 
 		plt.imshow(processed_map,  cmap=cm.jet)
-		plt.savefig('{}/test_image_predicted_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
+		plt.savefig('{}/test_image_contour_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
 		plt.cla()
 		plt.clf()
-
+		radius1 = 5
+		if predicted_center != (-1, -1):
+			xmin, ymin = predicted_center[1] - radius1, predicted_center[0] - radius1
+			xmax, ymax = predicted_center[1] + radius1, predicted_center[0] + radius1
+			prob_map_ = np.zeros(output.shape, dtype='float32')
+			prob_map_processed = prob_map(prob_map_, xmin, ymin, xmax, ymax, predicted_center, radius1)
+			plt.imshow(prob_map_processed,  cmap=cm.jet)
+			plt.savefig('{}/test_image_predicted_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
+			plt.cla()
+			plt.clf()
+		else:
+			plt.imshow(np.zeros(output.shape),  cmap=cm.jet)
+			plt.savefig('{}/test_image_predicted_postprocess_{}_drop_{}.png'.format(opt.result_root, opt.net, opt.drop_p))
+			plt.cla()
+			plt.clf()
 
 if __name__=='__main__':
 	test_image(opt.image, opt.xml)
