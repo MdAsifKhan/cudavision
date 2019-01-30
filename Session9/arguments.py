@@ -22,7 +22,7 @@ parser.add_argument('--result_root', default='/home/local/stud/khan01/cudavision
 parser.add_argument('--use_gpu', type=bool, default=True, help='Enable GPU Training')
 parser.add_argument('--manualSeed', type=int, default=123, help='manual seed')
 parser.add_argument('--image', required=False, help='test image path', default='')
-parser.add_argument('--xml', required=False, help='test xml path', default='')
+parser.add_argument('--xml', required=False, help='test xml path', default=None)
 parser.add_argument('--test_epoch', required=False, help='test xml path', default=10, type=int)
 
 opt = parser.parse_args()
@@ -31,8 +31,6 @@ opt.input_size = (640, 480)
 opt.rot_degree = 45
 if opt.image == '':
 	opt.image = opt.data_root + '/test_cnn/' + '00292.jpg'
-if opt.xml == '':
-	opt.xml = opt.data_root + '/test_cnn/' + '00292.xml'
 if opt.optimizer=='adam':
 	opt.lr = 0.001
 

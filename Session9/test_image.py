@@ -13,6 +13,8 @@ from utils import peak_detection, load_model, within_radius
 import matplotlib.cm as cm
 import math
 import cv2
+from scipy import ndimage
+
 def prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius):
 	'''
 	get probability map based on center and radius
@@ -100,7 +102,8 @@ def test_image(path, xml_path=None):
 			area, biggest_contour = max(contour_sizes, key=lambda x: x[0])
 			cv2.drawContours(img, [biggest_contour], -1, (1), cv2.FILLED)
 			processed_map = output * img
-			predicted_center = peak_detection(processed_map, threshold)
+			predicted_center = ndimage.measurements.center_of_mass(processed_map)
+			#predicted_center = peak_detection(processed_map, threshold)
 		else:
 			processed_map = output * img
 			area = 0
