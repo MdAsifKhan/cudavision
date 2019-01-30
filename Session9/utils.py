@@ -3,7 +3,7 @@ import pdb
 from arguments import opt
 import torch
 import cv2
-
+from scipy import ndimage
 
 def predict_box(peaks_predicted, box_actual):
 	'''
@@ -84,7 +84,7 @@ def load_model(model_name, key='state_dict_model', min_radius='min_radius', thre
 	return checkpoint, min_radius, threshold
 
 
-def post_porcessing(maps, threshold):
+def post_processing(maps, threshold):
 
 	processed_maps, predicted_centers, maps_area = [], [], []
 	for map_ in maps:
@@ -95,11 +95,14 @@ def post_porcessing(maps, threshold):
 			contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
 			area, biggest_contour = max(contour_sizes, key=lambda x: x[0])
 			cv2.drawContours(img, [biggest_contour], -1, (1), cv2.FILLED)
-
 			apply_map = map_ * img
 			processed_maps.append(apply_map)
-			cx, cy = peak_detection(apply_map, threshold)
-			predicted_centers.append((cx, cy))
+			#cX, cY = peak_detection(apply_map, threshold)
+			cX, cY = ndimage.measurements.center_of_mass(apply_map)
+			#M = cv2.moments(apply_map)
+			#cX = int(M['m10'] / M['m00'])
+			#cY = int(M['m01'] / M['m00'])
+			predicted_centers.append((cX, cY))
 			maps_area.append(area)
 		else:
 			apply_map = map_ * img

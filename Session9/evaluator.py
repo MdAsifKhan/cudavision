@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import os as os
 from arguments import opt
 import pdb
-from utils import post_porcessing, tp_fp_tn_fn_alt, performance_metric
+from utils import post_processing, tp_fp_tn_fn_alt, performance_metric
 import torch.nn.functional as F
 import numpy as np
 import h5py
@@ -107,7 +107,7 @@ class ModelEvaluator:
             output = output.cpu().detach().squeeze()
             if len(output.shape)<3:
                 output = output.unsqueeze(0)
-            _, predicted_centers, maps_area = post_porcessing(output.numpy(), self.threshold)
+            _, predicted_centers, maps_area = post_processing(output.numpy(), self.threshold)
 
             TP_t, FP_t, TN_t, FN_t = tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area, self.min_radius)
 
@@ -154,7 +154,7 @@ class ModelEvaluator:
                 if len(output.shape)<3:
                     output = output.unsqueeze(0)
 
-                _, predicted_centers, maps_area = post_porcessing(output.numpy(), self.threshold)
+                _, predicted_centers, maps_area = post_processing(output.numpy(), self.threshold)
                 TP_test, FP_test, TN_test, FN_test = tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area, self.min_radius)
                 TP += TP_test
                 FP += FP_test
