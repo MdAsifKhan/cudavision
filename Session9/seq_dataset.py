@@ -85,74 +85,90 @@ class BallDataset(Dataset):
 
 
 class RealBallDataset(Dataset):
-    def __init__(self, data_path, map_file, transform=None, prediction=20):
+    def __init__(self, data_path, transform=None, prediction=20):
         self.dataroot = data_path
-        self.map_file = map_file
+        # self.map_file = map_file
         self.transform = transform
+        # self.ball_frame2idx = {}
 
         if opt.seq_model == 'lstm':
             self.prediction = prediction
         if opt.seq_model == 'tcn':
             self.prediction = 1
 
-        with h5py.File(self.dataroot + '/' + self.map_file,'r') as hf:
-            targets = hf['prob_maps'].value
-            targets = np.array(targets).astype('float32')
-            filenames = list(hf['filenames'].value)
-            box = list(hf['ros'].value)
+        # with h5py.File(self.dataroot + '/' + self.map_file,'r') as hf:
+        #     targets = hf['prob_maps'].value
+        #     targets = np.array(targets).astype('float32')
+        #     filenames = list(hf['filenames'].value)
+        #     box = list(hf['ros'].value)
 
-        self.threshold = 0.7 * targets.max()
-        self.images, self.targets, self.box = [], [], []
-        filenames = [filename.decode('utf-8') for filename in filenames]
+        self.threshold = 0.7
+        # self.images, self.targets, self.box = [], [], []
+        # filenames = [filename.decode('utf-8') for filename in filenames]
 
         self._read_seq()
-        for ball_idx, i in self.ball_frames:
-            ball_filename, _ = self.balls[ball_idx][i]
-            self.images.append(ball_filename + '.jpg')
-            idx = filenames.index(ball_filename)
-            self.targets.append(targets[idx])
-            self.box.append(box[idx].astype('float32'))
+        # for ball_idx, i in self.ball_frames:
+        #     ball_filename, _ = self.balls[ball_idx][i]
+            # self.images.append(ball_filename + '.jpg')
+            # idx = filenames.index(ball_filename)
+            # self.ball_frame2idx[i] = idx
+            # self.targets.append(targets[idx])
+            # self.box.append(box[idx].astype('float32'))
 
     def _read_seq(self):
         self.balls = {}
         self.ball_frames = []
         self.filenames = []
-        for filename in os.listdir(opt.seq_real_balls):
+        for filename in os.listdir(os.path.join(opt.seq_real_balls, 'balls')):
             if 'ball' in filename:
                 # balls_files.append(os.path.join(opt.seq_real_balls, filename))
                 # ball_filename = os.path.join(opt.seq_real_balls, filename)
                 ball_idx = len(self.balls)
-                with open(os.path.join(opt.seq_real_balls, filename), 'r') as f:
+                with open(os.path.join(opt.seq_real_balls, 'balls', filename), 'r') as f:
                     ball = []
                     for line in f:
-                        line = map(lambda x: int(x), line.split())
-                        ball_filename = 'frame%04d_imageset_%d' % (line[0], line[1])
+                        line = list(map(lambda x: int(x), line.split()))
+                        ball_filename = 'imageset_%d/frame%04d.jpg' % (line[0], line[1])
                         ball_center = line[-2:]
                         ball.append([ball_filename, ball_center])
                         self.filenames.append(ball_filename)
                     self.balls[ball_idx] = ball
-                    for i in range(len(ball) - self.prediction):
+                    for i in range(1, len(ball) - self.prediction):
                         self.ball_frames.append([ball_idx, i])
 
     def __len__(self):
         return len(self.ball_frames)
 
-
     def __getitem__(self, idx):
         ball_idx, frame = self.ball_frames[idx]
-        if frame > opt.hist:
-            seq = self.balls[]
-        img_name = self.images[idx]
-        img_path = os.path.join(self.dataroot, img_name)
-        img = Image.open(img_path)
+        filenames = []
+        if opt.seq_model == 'tcn':
+            # predict next coordinate of the ball
+            _, gt_center = self.balls[ball_idx][frame]
+            # collect sequence of the data back from the past
+            while frame and len(filenames) != opt.hist:
+                frame -= 1
+                fn, _ = self.balls[ball_idx][frame]
+                filenames.append(fn)
+        seq = None
+        for img_name in filenames:
+            img_path = os.path.join(self.dataroot, img_name)
+            img = Image.open(img_path)
 
-        if self.transform:
-            img = self.transform(img)
+            if self.transform:
+                img = self.transform(img).view(1, 3, 480, 640)
+            if seq is None:
+                seq = img
+            else:
+                seq = torch.cat((img, seq))
+        if len(filenames) < opt.hist:
+            seq_z = torch.zeros(opt.hist - len(filenames), img.shape[1], img.shape[2], img.shape[3])
+            seq = torch.cat((seq_z, seq))
         #img = np.asarray(img).transpose(2, 0, 1)/255.0
         #img = torch.from_numpy(img).float()
-        prob_ = self.targets[idx]
-        coord_ = self.box[idx]
-        return img, prob_, coord_
+        # prob_ = self.targets[idx]
+        # coord_ = self.box[idx]
+        return seq, np.asarray(gt_center, dtype=float)
 
 
 if __name__ == '__main__':

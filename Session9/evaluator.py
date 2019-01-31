@@ -95,6 +95,8 @@ class ModelEvaluator:
         for b_idx, (train_data, train_labels) in enumerate(trainloader):
             train_data = train_data.float()
             train_labels = train_labels.float()
+            if opt.real_balls:
+                train_data = train_data.squeeze()
             if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
@@ -123,7 +125,7 @@ class ModelEvaluator:
             if b_idx % opt.print_every == 0:
                 logger.debug('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4}'.
                              format(epoch, b_idx * len(train_data),
-                                    len(trainloader.dataset),
+                                    len(train_data),
                                     100. * b_idx / len(trainloader), loss))
 
             loss_ = loss.item()
@@ -192,8 +194,8 @@ class ModelEvaluator:
         logger.debug('Model')
         logger.debug(str(self.model))
         for epoch in range(resume_epoch, self.epochs):
-            self.test(epoch, testloader)
             self.train(epoch, trainloader, print_every=print_every)
+            self.test(epoch, testloader)
             print (self.threshold)
             if epoch % opt.save_every==0:
                 save_model = {'threshold': self.threshold,

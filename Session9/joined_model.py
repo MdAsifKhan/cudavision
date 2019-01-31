@@ -31,6 +31,8 @@ class JoinedModel(nn.Module):
                            dropout=opt.dropout)
 
     def forward(self, x):
+        x = self.sweaty(x)
+        x = x.view(1, -1, opt.hist)
         x = self.seq(x)
         return x
 
@@ -54,7 +56,7 @@ def create_model():
     model = JoinedModel()
     if opt.use_gpu:
         model = model.cuda()
-    loss = nn.MSELoss(reduction='sum')
+    loss = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(),
                                  lr=opt.lr,
                                  weight_decay=opt.weight_decay)

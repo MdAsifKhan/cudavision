@@ -8,7 +8,7 @@ parser.add_argument('--data_root', required=False, help='path to dataset', defau
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--net', required=False, help='net1| net2| net3', default='net1')
 
-parser.add_argument('--batch_size', type=int, default=8, help='input batch size')
+parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
 
 parser.add_argument('--nm_epochs', type=int, default=100, help='number of epochs for training')
 parser.add_argument('--l2', type=float, default=0.0, help='l2 parameter')
@@ -35,7 +35,8 @@ parser.add_argument('--seq_dataset', default='toy.seq/npy')
 parser.add_argument('--seq_dataset_root', default='')
 parser.add_argument('--seq_save_out', default='seq_output')
 
-parser.add_argument('--seq_real_balls', default='SoccerDataSeq/balls')
+parser.add_argument('--seq_real_balls', default='SoccerDataSeq')
+parser.add_argument('--real_balls', default=True, type=bool)
 
 ###########################################
 # tcn
@@ -61,7 +62,7 @@ parser.add_argument('--min_move_steps', default=30, type=int)
 
 ###########################################
 # save
-parser.add_argument('--seq_resume', default=False, type=bool,
+parser.add_argument('--seq_resume', default=True, type=bool,
                     help='load model for embeddings, if positive then it is number of '
                          'epoch which should be loaded')
 parser.add_argument('--seq_resume_str',
@@ -76,7 +77,7 @@ opt.input_size = (640, 480)
 opt.rot_degree = 45
 
 if opt.data_root == '':
-    opt.data_root = 'SoccerData2'
+    opt.data_root = 'SoccerData'
 if opt.model_root == '':
     opt.model_root = 'model/'
 if opt.result_root == '':
