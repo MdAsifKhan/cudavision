@@ -65,42 +65,42 @@ def predict_box(peaks_predicted, box_actual):
     return np.asarray(box_predicted)
 
 def within_radius(x, y, x_p, y_p, radius):
-	return (abs(y-y_p)<=radius and abs(x-x_p)<=radius)
+    return (abs(y-y_p)<=radius and abs(x-x_p)<=radius)
 
 def tp_fp_tn_fn(peaks_batch, peaks_value, box_actual, radius=5):
 
-	centers = []
-	for box in box_actual:
-		xmin, ymin = box[0], box[1]
-		xmax, ymax = box[2], box[3]
-		center = [(ymax+ymin)/2, (xmax+xmin)/2]
-		centers.append(center)
-	TP, FP, FN, TN = 0, 0, 0, 0
-	for peak, peak_value, center in zip(peaks_batch, peaks_value, centers):
-		y, x = center[0], center[1]
-		#y_p, x_p = get_closest_peak(x, y, peaks)
-		y_p, x_p = peak[0], peak[1]
-	#for peak, center in zip(peaks, centers):
-		# center = [0, 0] if there is no ball in an image
-		# peak = [0, 0] if predicted map is zero
-		#y, x = center[0], center[1]
-		'''
-		if y==0 and x==0 and peak_value<=1e-4:
-			TN += 1
-		elif (y!=0 and x!=0) and within_radius(x, y, x_p, y_p, radius):
-			TP += 1
-		elif not within_radius(x, y, x_p, y_p, radius):
-			FP += 1
-		else:
-			FN += 1
-		'''
-		if peak_value<=1e-4 and not within_radius(x, y, x_p, y_p, radius):
-			FN += 1
-		elif within_radius(x, y, x_p, y_p, radius):
-			TP += 1
-		else:
-			FP += 1
-	return TP, FP, FN, TN
+    centers = []
+    for box in box_actual:
+        xmin, ymin = box[0], box[1]
+        xmax, ymax = box[2], box[3]
+        center = [(ymax+ymin)/2, (xmax+xmin)/2]
+        centers.append(center)
+    TP, FP, FN, TN = 0, 0, 0, 0
+    for peak, peak_value, center in zip(peaks_batch, peaks_value, centers):
+        y, x = center[0], center[1]
+        #y_p, x_p = get_closest_peak(x, y, peaks)
+        y_p, x_p = peak[0], peak[1]
+    #for peak, center in zip(peaks, centers):
+        # center = [0, 0] if there is no ball in an image
+        # peak = [0, 0] if predicted map is zero
+        #y, x = center[0], center[1]
+        '''
+        if y==0 and x==0 and peak_value<=1e-4:
+            TN += 1
+        elif (y!=0 and x!=0) and within_radius(x, y, x_p, y_p, radius):
+            TP += 1
+        elif not within_radius(x, y, x_p, y_p, radius):
+            FP += 1
+        else:
+            FN += 1
+        '''
+        if peak_value<=1e-4 and not within_radius(x, y, x_p, y_p, radius):
+            FN += 1
+        elif within_radius(x, y, x_p, y_p, radius):
+            TP += 1
+        else:
+            FP += 1
+    return TP, FP, FN, TN
 
 def get_closest_peak(x, y, peaks):
     ball_peak = peaks[0]
@@ -142,26 +142,26 @@ def performance_metric(box_actual, box_predicted):
     return FDR, RC, accuracy
 
 def peak_detection(threshold, maps, radius=5):
-	'''
-	peak detection on predicted score
-	'''
-	peaks = []
-	peaks_value = []
-	for map_ in maps:
-		#peaks_ = []
-		peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-		max_value = map_[peak]
-		#peaks_.append(peak)
-		while max_value>=threshold:
-			map_[max(0, int(peak[0]-radius)):min(int(peak[0]+1+radius), map_.shape[0]), 
-					max(0, int(peak[1]-radius)):min(int(peak[1]+1+radius), map_.shape[1])] = 0
+    '''
+    peak detection on predicted score
+    '''
+    peaks = []
+    peaks_value = []
+    for map_ in maps:
+        #peaks_ = []
+        peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
+        max_value = map_[peak]
+        #peaks_.append(peak)
+        while max_value>=threshold:
+            map_[max(0, int(peak[0]-radius)):min(int(peak[0]+1+radius), map_.shape[0]),
+                    max(0, int(peak[1]-radius)):min(int(peak[1]+1+radius), map_.shape[1])] = 0
 
-			peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-			max_value = map_[peak]
-			#peaks_.append(peak)
-		peaks.append(peak)
-		peaks_value.append(max_value)
-	return peaks, peaks_value
+            peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
+            max_value = map_[peak]
+            #peaks_.append(peak)
+        peaks.append(peak)
+        peaks_value.append(max_value)
+    return peaks, peaks_value
 
 def load_model(model_name, key='state_dict_model', thresh='threshold'):
     '''
