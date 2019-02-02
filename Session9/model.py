@@ -82,7 +82,6 @@ class SweatyNet1(nn.Module):
                         nn.ReLU()
 
         )
-        #self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.layer13 = nn.Sequential(
                         nn.Conv2d(8+16+32+64+64, 64, 1, padding=0),
                         nn.BatchNorm2d(64),
@@ -150,14 +149,15 @@ class SweatyNet1(nn.Module):
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer18(self.layer17(self.layer16(out8)))
-        out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
-        return out
+        #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
+        return out.squeeze()
         
 class SweatyNet2(nn.Module):
     def __init__(self, nc, drop_p):
         super(SweatyNet2,self).__init__()
         self.nc = nc
         self.drop_p = drop_p
+
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
                         nn.BatchNorm2d(8),
@@ -240,8 +240,9 @@ class SweatyNet2(nn.Module):
 
         )
         self.layer14 = nn.Sequential(
-                        nn.Conv2d(16, self.nc, 3, padding=1)
-
+                        nn.Conv2d(16, self.nc, 3, padding=1),
+                        nn.BatchNorm2d(self.nc),
+                        nn.ReLU()
         ) 
         self.drop = nn.Dropout(p=self.drop_p)
 
@@ -270,15 +271,16 @@ class SweatyNet2(nn.Module):
         out8 = torch.cat((out8, out3), 1)
 
         out = self.layer14(self.layer13(self.layer12(out8)))
-        out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
+        #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
         
-        return out
+        return out.squeeze()
 
 class SweatyNet3(nn.Module):
     def __init__(self, nc, drop_p):
         super(SweatyNet3, self).__init__()
         self.nc = nc
         self.drop_p = drop_p
+
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
                         nn.BatchNorm2d(8),
@@ -393,8 +395,9 @@ class SweatyNet3(nn.Module):
 
         )
         self.layer20 = nn.Sequential(
-                        nn.Conv2d(16, self.nc, 3, padding=1)
-
+                        nn.Conv2d(16, self.nc, 3, padding=1),
+                        nn.BatchNorm2d(self.nc),
+                        nn.ReLU()
         ) 
         self.drop = nn.Dropout(p=self.drop_p)
 
@@ -429,5 +432,6 @@ class SweatyNet3(nn.Module):
 
         out = self.layer20(self.layer19(self.layer18(out8)))
         out = self.drop(out)
-        out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])        
-        return out
+        #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
+        return out.squeeze()
+
