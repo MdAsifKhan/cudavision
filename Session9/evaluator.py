@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import os as os
 from arguments import opt
 import pdb
-from utils import batch_iou, performance_metric, peak_detection, predict_box, performance_metric_alternative, tp_fp_tn_fn
+from utils import post_processing, tp_fp_tn_fn_alt, performance_metric
 import torch.nn.functional as F
 import numpy as np
 from logging_setup import logger
@@ -13,7 +13,7 @@ import h5py
 
 
 class ModelEvaluator:
-    def __init__(self, model, threshold):
+    def __init__(self, model, min_radius, threshold):
         '''
         model: instance of pytorch model class
         epochs: number of training epochs
@@ -34,6 +34,8 @@ class ModelEvaluator:
         self.loss = nn.MSELoss(reduction='sum')
         self.optim = opt.optimizer
         self.resume = opt.resume
+        #self.threshold = threshold
+        self.min_radius = min_radius
         self.threshold = threshold
         self.fdr_train = []
         self.RC_train = []
@@ -131,7 +133,7 @@ class ModelEvaluator:
             loss_ = loss.item()
             self.iter_loss_train.append(loss_)
             loss_batch += loss_
-        
+
         # FDR_train, RC_train, accuracy_train = performance_metric_alternative(TP, FP, FN, TN)
         # self.fdr_train.append(FDR_train)
         # self.accuracy_train.append(accuracy_train)
@@ -159,11 +161,9 @@ class ModelEvaluator:
                 output = output.cpu().squeeze()
                 if len(output.shape)<3:
                     output = output.unsqueeze(0)
-                peaks_predicted_test, peaks_value_test = peak_detection(self.threshold, output.numpy())
-                #box_predicted = predict_box(peaks_predicted, box_actual.numpy())
-                #TP_test, FP_test, TN_test, FN_test = eval_alt(peaks_predicted_test, box_actual.numpy())
-                TP_test, FP_test, FN_test, TN_test = tp_fp_tn_fn(peaks_predicted_test, peaks_value_test, box_actual.numpy())
-                #FDR_batch, RC_batch, accuracy_batch = performance_metric(box_actual.numpy(), box_predicted)
+
+                _, predicted_centers, maps_area = post_processing(output.numpy(), self.threshold)
+                TP_test, FP_test, TN_test, FN_test = tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area, self.min_radius)
                 TP += TP_test
                 FP += FP_test
                 FN += FN_test
@@ -172,7 +172,7 @@ class ModelEvaluator:
                 batch_loss += loss_
             
             batch_loss /= len(testloader)
-            FDR_test, RC_test, accuracy_test = performance_metric_alternative(TP, FP, FN, TN)
+            FDR_test, RC_test, accuracy_test = performance_metric(TP, FP, FN, TN)
             
             self.fdr_test.append(FDR_test)
             self.accuracy_test.append(accuracy_test)
@@ -270,6 +270,9 @@ class ModelEvaluator:
         return model, epoch
 
     def save_output(self):
+        '''
+        save results
+        '''
         filename = '{}/evaluation_epoch_{}_drop_{}.h5'.format(opt.result_root, opt.net, opt.drop_p)
         with h5py.File(filename, 'w') as hf:
             hf.create_dataset('RC_train', data = self.RC_train)
