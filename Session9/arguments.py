@@ -11,10 +11,10 @@ parser.add_argument('--net', required=False, help='net1| net2| net3', default='n
 parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
 
 parser.add_argument('--nm_epochs', type=int, default=100, help='number of epochs for training')
-parser.add_argument('--l2', type=float, default=0.0, help='l2 parameter')
+parser.add_argument('--l2', type=float, default=1e-4, help='l2 parameter')
 parser.add_argument('--optimizer', type=str, default='adam', help='optimizer to use')
 parser.add_argument('--print_every', type=int, default=2, help='print checkpoints')
-parser.add_argument('--save_every', type=int, default=5, help='model checkpoints')
+parser.add_argument('--save_every', type=int, default=2, help='model checkpoints')
 parser.add_argument('--weight_decay', default=1e-4, help='regularization constant for l_2 regularizer of W')
 
 parser.add_argument('--drop_p', type=float, default=0.0, help='Dropout Probability')
@@ -35,6 +35,7 @@ parser.add_argument('--seq_model', default='tcn', help='lstm | tcn')
 parser.add_argument('--seq_dataset', default='toy.seq/npy')
 parser.add_argument('--seq_dataset_root', default='')
 parser.add_argument('--seq_save_out', default='seq_output')
+parser.add_argument('--lr', default=1e-5, type=float)
 
 parser.add_argument('--seq_real_balls', default='SoccerDataSeq')
 parser.add_argument('--real_balls', default=True, type=bool)
@@ -67,10 +68,14 @@ parser.add_argument('--seq_resume', default=True, type=bool,
                     help='load model for embeddings, if positive then it is number of '
                          'epoch which should be loaded')
 parser.add_argument('--seq_resume_str',
-                    default='model/tcn.ep100_95.pth.tar')
+                    default='model/tcn.ep100.lr1.0e-04_70.pth.tar')
                     # default='model/lstm.ep30_20.pth.tar')
-parser.add_argument('--sweaty_resume_str', default='model/Model_lr_0.001_opt_adam_epoch_55_net_net1_drop_0.0')
-parser.add_argument('--seq_save_model', default='ft.tcn.sw.seq.')
+
+parser.add_argument('--sweaty_resume_str', default='model/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.0')
+parser.add_argument('--seq_save_model', default='')
+
+parser.add_argument('--seq_both_resume', default=False)
+parser.add_argument('--seq_both_resume_str', default='model/ft.tcn.sw.seq._lr_1e-05_opt_adam_epoch_40')
 
 opt = parser.parse_args()
 opt.dataset = 'soccer'

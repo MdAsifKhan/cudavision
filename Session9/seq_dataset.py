@@ -11,6 +11,7 @@ import numpy as np
 from os.path import join
 import os
 import re
+from scipy import signal
 import h5py
 import tqdm
 from collections import defaultdict
@@ -140,16 +141,17 @@ class RealBallDataset(Dataset):
         return len(self.ball_frames)
 
     def __getitem__(self, idx):
-        ball_idx, frame = self.ball_frames[idx]
+        ball_idx, iframe = self.ball_frames[idx]
         filenames = []
-        if opt.seq_model == 'tcn':
-            # predict next coordinate of the ball
-            _, gt_center = self.balls[ball_idx][frame]
-            # collect sequence of the data back from the past
-            while frame and len(filenames) != opt.hist:
-                frame -= 1
-                fn, _ = self.balls[ball_idx][frame]
-                filenames.append(fn)
+        # predict next coordinate of the ball
+        frame = iframe
+        _, gt_center = self.balls[ball_idx][frame]
+        # collect sequence of the data back from the past
+        while frame and len(filenames) != opt.hist:
+            frame -= 1
+            fn, _ = self.balls[ball_idx][frame]
+            filenames.append(fn)
+
         seq = None
         for img_name in filenames:
             img_path = os.path.join(self.dataroot, img_name)
@@ -164,11 +166,18 @@ class RealBallDataset(Dataset):
         if len(filenames) < opt.hist:
             seq_z = torch.zeros(opt.hist - len(filenames), img.shape[1], img.shape[2], img.shape[3])
             seq = torch.cat((seq_z, seq))
+        if opt.seq_model == 'tcn':
+            return seq, np.asarray(gt_center, dtype=float)
+        if opt.seq_model == 'lstm':
+            heatmap = np.zeros((opt.map_size_x, opt.map_size_y), dtype=np.float32)
+            window = signal.gaussian(opt.window_size, std=3).reshape((-1, 1))
+            x,y = gt_center
+            heatmap[x:x + opt.window_size, y:y + opt.window_size] = window
+            return seq, heatmap
         #img = np.asarray(img).transpose(2, 0, 1)/255.0
         #img = torch.from_numpy(img).float()
         # prob_ = self.targets[idx]
         # coord_ = self.box[idx]
-        return seq, np.asarray(gt_center, dtype=float)
 
 
 if __name__ == '__main__':

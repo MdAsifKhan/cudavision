@@ -11,7 +11,7 @@ import torch.nn as nn
 
 
 from arguments import opt
-from model import SweatyNet1
+from model import SweatyNet1, SweatyNet2, SweatyNet3
 from lstm import LSTM
 from logging_setup import logger
 from tcn import TCN
@@ -32,7 +32,10 @@ class JoinedModel(nn.Module):
 
     def forward(self, x):
         x = self.sweaty(x)
-        x = x.view(1, -1, opt.hist)
+        if opt.seq_model == 'tcn':
+            x = x.view(1, -1, opt.hist)
+        if opt.seq_model == 'lstm':
+            x = x.view(1, -1, opt.map_size_x, opt.map_size_y)
         x = self.seq(x)
         return x
 
@@ -49,6 +52,11 @@ class JoinedModel(nn.Module):
         checkpoint = torch.load(path)
         checkpoint = checkpoint['state_dict']
         self.seq.load_state_dict(checkpoint)
+
+    def resume_both(self, path):
+        checkpoint = torch.load(path)
+        checkpoint = checkpoint['state_dict_model']
+        self.load_state_dict(checkpoint)
 
 
 def create_model():

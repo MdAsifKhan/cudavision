@@ -44,7 +44,7 @@ class Ball:
         for fidx, frame in enumerate(self.frames[:-1]):
             coord.append([frame, self.x[fidx], self.y[fidx]])
             for fidx_fake in range(self.frames[fidx + 1] - frame - 1):
-                coord.append([fidx_fake + frame, self.x[-1], self.y[-1]])
+                coord.append([fidx_fake + frame, 0, 0])
             # coord.append([[-1, -1]] * (self.frames[fidx + 1] - frame))
         coord.append([self.frames[-1], self.x[-1], self.y[-1]])
         coord = np.array(coord).reshape((-1, 3))

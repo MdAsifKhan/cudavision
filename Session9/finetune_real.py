@@ -65,6 +65,17 @@ testloader = torch.utils.data.DataLoader(testset,
                                          num_workers=opt.workers,
                                          drop_last=True)
 
+# t = SoccerDataSet(data_path=opt.data_root + '/train_cnn', map_file='train_maps',
+#                         transform=transforms.Compose([
+#                             # transforms.RandomResizedCrop(opt.input_size[1]),
+#                             # transforms.RandomHorizontalFlip(),
+#                             # transforms.RandomRotation(opt.rot_degree),
+#                             transforms.ColorJitter(brightness=0.3,
+#                                                    contrast=0.4, saturation=0.4),
+#                             transforms.ToTensor(),
+#                             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+#                         ]))
+
 # model = training(dataloader, opt.nm_epochs, save=opt.seq_save_model,
 #                  model=model,
 #                  optimizer=optimizer,
@@ -78,8 +89,7 @@ model.resume_sweaty(os.path.abspath(opt.sweaty_resume_str))
 if opt.seq_resume:
     model.resume_seq(os.path.abspath(opt.seq_resume_str))
 
-opt.lr = 1e-7
-modeleval = ModelEvaluator(model, 0.5)
+modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625)
 modeleval.evaluator(trainloader, testloader)
 modeleval.plot_loss()
 

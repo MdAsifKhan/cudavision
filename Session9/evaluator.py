@@ -104,7 +104,7 @@ class ModelEvaluator:
                 train_labels = train_labels.cuda()
             if opt.seq_model == 'lstm':
                 output, (h, cc) = self.model(train_data)
-                loss = self.loss(output[0], train_labels)
+                loss = self.loss(output[0][:, 0], train_labels)
             if opt.seq_model == 'tcn':
                 output = self.model(train_data)
                 loss = self.loss(output, train_labels)
@@ -113,8 +113,8 @@ class ModelEvaluator:
             if threshold>self.threshold:
                 self.threshold = threshold
 
-            # if self.l2:
-            #     loss = self.l2_regularization(loss, self.l2)
+            if self.l2:
+                loss = self.l2_regularization(loss, self.l2)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -153,33 +153,36 @@ class ModelEvaluator:
         TP, FP, FN, TN = 0, 0, 0, 0
         with torch.no_grad():
             batch_loss = 0
-            for b_idx, (test_data, test_labels, box_actual) in enumerate(testloader):
+            for test_data, test_labels, actual_centers in testloader:
                 if self.use_gpu:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
+                # output = self.model(test_data)
                 output = self.model.test(test_data)
                 loss_ = self.loss(output, test_labels)
                 output = output.cpu().squeeze()
-                if len(output.shape)<3:
+                if len(output.shape) < 3:
                     output = output.unsqueeze(0)
 
                 _, predicted_centers, maps_area = post_processing(output.numpy(), self.threshold)
-                TP_test, FP_test, TN_test, FN_test = tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area, self.min_radius)
+                TP_test, FP_test, TN_test, FN_test = tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area,
+                                                                     self.min_radius)
                 TP += TP_test
                 FP += FP_test
                 FN += FN_test
                 TN += TN_test
                 self.iter_loss_test.append(loss_)
                 batch_loss += loss_
-            
+
             batch_loss /= len(testloader)
             FDR_test, RC_test, accuracy_test = performance_metric(TP, FP, FN, TN)
-            
+
             self.fdr_test.append(FDR_test)
             self.accuracy_test.append(accuracy_test)
             self.RC_test.append(RC_test)
 
             logger.debug('epoch {} Test TP {} FP {} TN {} FN {}'.format(epoch, TP, FP, TN, FN))
-            logger.debug('Test loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(batch_loss, FDR_test, RC_test, accuracy_test))
+            logger.debug('Test loss = {0} FDR = {1:.4f} , RC {2:.4f} =, accuracy = {3:.4f}'.format(batch_loss, FDR_test,
+                                                                                            RC_test, accuracy_test))
 
             self.test_loss.append(batch_loss)
 
@@ -194,8 +197,8 @@ class ModelEvaluator:
         logger.debug('Model')
         logger.debug(str(self.model))
         for epoch in range(resume_epoch, self.epochs):
-            self.train(epoch, trainloader, print_every=print_every)
             self.test(epoch, testloader)
+            self.train(epoch, trainloader, print_every=print_every)
             print (self.threshold)
             if epoch % opt.save_every==0:
                 save_model = {'threshold': self.threshold,

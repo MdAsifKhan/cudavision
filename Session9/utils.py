@@ -21,41 +21,6 @@ def predict_box(peaks_predicted, box_actual):
 def within_radius(x, y, x_p, y_p, radius):
     return (abs(y-y_p)<=radius and abs(x-x_p)<=radius)
 
-<<<<<<< HEAD
-def tp_fp_tn_fn(peaks_batch, peaks_value, box_actual, radius=5):
-
-    centers = []
-    for box in box_actual:
-        xmin, ymin = box[0], box[1]
-        xmax, ymax = box[2], box[3]
-        center = [(ymax+ymin)/2, (xmax+xmin)/2]
-        centers.append(center)
-    TP, FP, FN, TN = 0, 0, 0, 0
-    for peak, peak_value, center in zip(peaks_batch, peaks_value, centers):
-        y, x = center[0], center[1]
-        #y_p, x_p = get_closest_peak(x, y, peaks)
-        y_p, x_p = peak[0], peak[1]
-    #for peak, center in zip(peaks, centers):
-        # center = [0, 0] if there is no ball in an image
-        # peak = [0, 0] if predicted map is zero
-        #y, x = center[0], center[1]
-        '''
-        if y==0 and x==0 and peak_value<=1e-4:
-            TN += 1
-        elif (y!=0 and x!=0) and within_radius(x, y, x_p, y_p, radius):
-            TP += 1
-        elif not within_radius(x, y, x_p, y_p, radius):
-            FP += 1
-        else:
-            FN += 1
-        '''
-        if peak_value<=1e-4 and not within_radius(x, y, x_p, y_p, radius):
-            FN += 1
-        elif within_radius(x, y, x_p, y_p, radius):
-            TP += 1
-        else:
-            FP += 1
-=======
 
 def tp_fp_tn_fn(peaks_batch, peaks_value, centers, radius=5):
     '''
@@ -72,7 +37,6 @@ def tp_fp_tn_fn(peaks_batch, peaks_value, centers, radius=5):
             TP += 1
         else:
             FN += 1
->>>>>>> master
     return TP, FP, FN, TN
 
 def get_closest_peak(x, y, peaks):
@@ -109,44 +73,7 @@ def peak_detection(map_, threshold):
         peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
     return peak
 
-<<<<<<< HEAD
-    iou = batch_iou(box_actual, box_predicted)
-    TP = iou>0.5
-    FP = iou<=0.5
-    FN = iou<=1e-5
-
-    accuracy = TP.sum()/len(TP)
-    FDR = FP.sum()/(FP.sum() + TP.sum())
-    RC = TP.sum()/(TP.sum() + FN.sum())
-
-    return FDR, RC, accuracy
-
-def peak_detection(threshold, maps, radius=5):
-    '''
-    peak detection on predicted score
-    '''
-    peaks = []
-    peaks_value = []
-    for map_ in maps:
-        #peaks_ = []
-        peak =  np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-        max_value = map_[peak]
-        #peaks_.append(peak)
-        while max_value>=threshold:
-            map_[max(0, int(peak[0]-radius)):min(int(peak[0]+1+radius), map_.shape[0]),
-                    max(0, int(peak[1]-radius)):min(int(peak[1]+1+radius), map_.shape[1])] = 0
-
-            peak = np.unravel_index(np.argmax(map_, axis=None), map_.shape)
-            max_value = map_[peak]
-            #peaks_.append(peak)
-        peaks.append(peak)
-        peaks_value.append(max_value)
-    return peaks, peaks_value
-
-def load_model(model_name, key='state_dict_model', thresh='threshold'):
-=======
 def load_model(model_name, key='state_dict_model', min_radius='min_radius', threshold='threshold'):
->>>>>>> master
     '''
     get checkpoint of trained model and threshold
     '''
@@ -162,7 +89,7 @@ def post_processing(maps, threshold):
     processed_maps, predicted_centers, maps_area = [], [], []
     for map_ in maps:
         binary_map = (map_>0.1).astype(np.uint8)
-        contours = cv2.findContours(binary_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+        contours = cv2.findContours(binary_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
         img = np.zeros(map_.shape, np.uint8)
         if len(contours)>0:
             contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]

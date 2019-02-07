@@ -16,7 +16,7 @@ class LSTM(nn.Module):
     def __init__(self):
         super(LSTM, self).__init__()
         self.clstm = ConvLSTM(input_channels=20,
-                              hidden_channels=[64, 128, 64, 10],
+                              hidden_channels=[64, 128, 64, 2],
                               kernel_size=5,
                               step=9,
                               effective_step=[8])
