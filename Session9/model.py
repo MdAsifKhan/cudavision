@@ -5,8 +5,9 @@ import  torch.nn.functional as F
 from torch.nn.functional import upsample
 
 class SweatyNet1(nn.Module):
-    def __init__(self, nc, drop_p):
+    def __init__(self, nc, drop_p, finetune=False):
         super(SweatyNet1,self).__init__()
+        self.finetune = finetune
         self.nc = nc
         self.drop_p = drop_p
         self.layer1 = nn.Sequential(
@@ -150,7 +151,12 @@ class SweatyNet1(nn.Module):
 
         out = self.layer18(self.layer17(self.layer16(out8)))
         #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
-        return out.squeeze()
+        if self.finetune:
+            # return out.squeeze(), torch.cat((out2, out3), 1)
+            return out.squeeze(), out2, out8
+            # return out.squeeze(), torch.cat((out2, out8), 1)
+        else:
+            return out.squeeze()
         
 class SweatyNet2(nn.Module):
     def __init__(self, nc, drop_p):

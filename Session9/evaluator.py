@@ -8,6 +8,7 @@ from utils import post_processing, tp_fp_tn_fn_alt, performance_metric
 import torch.nn.functional as F
 import numpy as np
 from logging_setup import logger
+from util_functions import Averaging
 
 import h5py
 
@@ -48,7 +49,8 @@ class ModelEvaluator:
 
         parameters = self.model.parameters()
         if self.optim == 'adam':
-            self.optimizer = torch.optim.Adam(parameters, lr=opt.lr)
+            self.optimizer = torch.optim.Adam(parameters, lr=opt.lr,
+                                              weight_decay=1e-4)
         elif self.optim == 'sgd':
             self.optimizer = torch.optim.SGD(parameters, lr=opt.lr,
                                              momentum=opt.mom)
@@ -90,8 +92,10 @@ class ModelEvaluator:
         method for training
         '''
         self.model.train()
+        losses = Averaging()
         loss_batch = 0
-        if epoch % 100 == 0 and epoch > 0:
+        step_lr = 7
+        if epoch % step_lr == 0 and (epoch > 0 or step_lr == 1):
             self.adjust_lr(step=0.1)
         # TP, FP, FN, TN = 0, 0, 0, 0
         for b_idx, (train_data, train_labels) in enumerate(trainloader):
@@ -109,30 +113,31 @@ class ModelEvaluator:
                 output = self.model(train_data)
                 loss = self.loss(output, train_labels)
 
+            losses.update(loss.item(), train_data.size(0))
+
             threshold = 0.7*train_data.max()
             if threshold>self.threshold:
                 self.threshold = threshold
 
-            if self.l2:
-                loss = self.l2_regularization(loss, self.l2)
+            # if self.l2:
+            #     loss = self.l2_regularization(loss, self.l2)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            # peaks_predicted_train = peak_detection(self.threshold, output.cpu().detach().numpy().squeeze())
-            # TP_t, FP_t, FN_t, TN_t = tp_fp_tn_fn(peaks_predicted_train, box_actual.numpy())
-            # TP += TP_t
-            # FP += FP_t
-            # FN += FN_t
-            # TN += TN_t
+
+            # if loss > 1000:
+
             if b_idx % opt.print_every == 0:
-                logger.debug('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4}'.
+                logger.debug('%s | %s' % (str(train_labels), str(output)))
+                logger.debug('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4:<10.3f} \ {5:>10.3f}'.
                              format(epoch, b_idx * len(train_data),
-                                    len(train_data),
-                                    100. * b_idx / len(trainloader), loss))
+                                    len(trainloader) * len(train_data),
+                                    100. * b_idx / len(trainloader), loss, losses.avg))
 
             loss_ = loss.item()
             self.iter_loss_train.append(loss_)
             loss_batch += loss_
+        losses.reset()
 
         # FDR_train, RC_train, accuracy_train = performance_metric_alternative(TP, FP, FN, TN)
         # self.fdr_train.append(FDR_train)

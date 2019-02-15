@@ -86,11 +86,12 @@ class BallDataset(Dataset):
 
 
 class RealBallDataset(Dataset):
-    def __init__(self, data_path, transform=None, prediction=20):
+    def __init__(self, data_path, transform=None, prediction=20, small=False):
         self.dataroot = data_path
         # self.map_file = map_file
         self.transform = transform
         # self.ball_frame2idx = {}
+        self._small = small
 
         if opt.seq_model == 'lstm':
             self.prediction = prediction
@@ -120,12 +121,16 @@ class RealBallDataset(Dataset):
         self.balls = {}
         self.ball_frames = []
         self.filenames = []
-        for filename in os.listdir(os.path.join(opt.seq_real_balls, 'balls')):
+        if self._small:
+            folder_name = 'balls_wo_zeros'
+        else:
+            folder_name = 'balls'
+        for filename in os.listdir(os.path.join(opt.seq_real_balls, folder_name)):
             if 'ball' in filename:
                 # balls_files.append(os.path.join(opt.seq_real_balls, filename))
                 # ball_filename = os.path.join(opt.seq_real_balls, filename)
                 ball_idx = len(self.balls)
-                with open(os.path.join(opt.seq_real_balls, 'balls', filename), 'r') as f:
+                with open(os.path.join(opt.seq_real_balls, folder_name, filename), 'r') as f:
                     ball = []
                     for line in f:
                         line = list(map(lambda x: int(x), line.split()))

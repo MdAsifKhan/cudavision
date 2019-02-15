@@ -14,7 +14,7 @@ import os
 import random
 
 from arguments import opt
-from logging_setup import path_logger
+from logging_setup import path_logger, logger
 from seq_dataset import BallDataset, RealBallDataset
 import lstm
 from training_net import training
@@ -29,6 +29,11 @@ random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 cudnn.benchmark = True
 
+vars_iter = list(vars(opt))
+for arg in sorted(vars_iter):
+    logger.debug('%s: %s' % (arg, getattr(opt, arg)))
+
+
 # trainset = BallDataset(opt.seq_dataset)
 trainset = RealBallDataset(data_path=opt.seq_real_balls,
                            transform=transforms.Compose([
@@ -39,14 +44,15 @@ trainset = RealBallDataset(data_path=opt.seq_real_balls,
                                                       contrast=0.4, saturation=0.4),
                                transforms.ToTensor(),
                                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-                           ]))
-
-
+                           ]),
+                           small=False)
 
 trainloader = torch.utils.data.DataLoader(trainset,
                                           batch_size=1,
                                           shuffle=True,
                                           num_workers=opt.workers)
+
+
 
 testset = SoccerDataSet(data_path=opt.data_root + '/test_cnn', map_file='test_maps',
                         transform=transforms.Compose([

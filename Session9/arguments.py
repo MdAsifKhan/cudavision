@@ -14,15 +14,15 @@ parser.add_argument('--nm_epochs', type=int, default=100, help='number of epochs
 parser.add_argument('--l2', type=float, default=1e-4, help='l2 parameter')
 parser.add_argument('--optimizer', type=str, default='adam', help='optimizer to use')
 parser.add_argument('--print_every', type=int, default=2, help='print checkpoints')
-parser.add_argument('--save_every', type=int, default=2, help='model checkpoints')
+parser.add_argument('--save_every', type=int, default=1, help='model checkpoints')
 parser.add_argument('--weight_decay', default=1e-4, help='regularization constant for l_2 regularizer of W')
 
-parser.add_argument('--drop_p', type=float, default=0.0, help='Dropout Probability')
+parser.add_argument('--drop_p', type=float, default=0.5, help='Dropout Probability')
 parser.add_argument('--resume', type=int, default=0, help='epoch at which training resumes')
 parser.add_argument('--model_root', default='model/', help='folder to output model checkpoints')
 parser.add_argument('--result_root', default='results', help='folder to output image checkpoints')
 parser.add_argument('--use_gpu', type=bool, default=True, help='Enable GPU Training')
-parser.add_argument('--manualSeed', type=int, default=123, help='manual seed')
+parser.add_argument('--manualSeed', type=int, default=42, help='manual seed')
 parser.add_argument('--image', required=False, help='test image path', default='')
 parser.add_argument('--xml', required=False, help='test xml path', default=None)
 parser.add_argument('--test_epoch', required=False, help='test xml path', default=10, type=int)
@@ -35,7 +35,7 @@ parser.add_argument('--seq_model', default='tcn', help='lstm | tcn')
 parser.add_argument('--seq_dataset', default='toy.seq/npy')
 parser.add_argument('--seq_dataset_root', default='')
 parser.add_argument('--seq_save_out', default='seq_output')
-parser.add_argument('--lr', default=1e-5, type=float)
+parser.add_argument('--lr', default=1e-4, type=float)
 
 parser.add_argument('--seq_real_balls', default='SoccerDataSeq')
 parser.add_argument('--real_balls', default=True, type=bool)
@@ -45,9 +45,9 @@ parser.add_argument('--real_balls', default=True, type=bool)
 parser.add_argument('--hist', default=20)
 parser.add_argument('--nhid', default=25, type=int)
 parser.add_argument('--output_size', default=2, type=int)
-parser.add_argument('--levels', default=3, type=int)
+parser.add_argument('--levels', default=2, type=int)
 parser.add_argument('--ksize', default=7, type=int)
-parser.add_argument('--dropout', type=float, default=0.05,
+parser.add_argument('--dropout', type=float, default=0.1,
                     help='dropout applied to layers (default: 0.05)')
 
 ###########################################
@@ -68,14 +68,18 @@ parser.add_argument('--seq_resume', default=True, type=bool,
                     help='load model for embeddings, if positive then it is number of '
                          'epoch which should be loaded')
 parser.add_argument('--seq_resume_str',
-                    default='model/tcn.ep100.lr1.0e-04_70.pth.tar')
+                    default='model/run10t.tcn.ep61.lr1.0e-04_9.pth.tar')
                     # default='model/lstm.ep30_20.pth.tar')
+parser.add_argument('--seq_save_model', default='ft.big.6.')
 
-parser.add_argument('--sweaty_resume_str', default='model/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.0')
-parser.add_argument('--seq_save_model', default='')
+parser.add_argument('--sweaty_resume_str', default='model/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.5')
 
-parser.add_argument('--seq_both_resume', default=False)
-parser.add_argument('--seq_both_resume_str', default='model/ft.tcn.sw.seq._lr_1e-05_opt_adam_epoch_40')
+parser.add_argument('--save_out', default='output.ft.big.6.')
+parser.add_argument('--seq_both_resume', default=True)
+parser.add_argument('--seq_both_resume_str',
+                    # default='model/test.big._lr_1e-06_opt_adam_epoch_0'
+                    # default='model/test._lr_0.0001_opt_adam_epoch_8')
+                    default='model/ft.small.6._lr_0.0001_opt_adam_epoch_19')
 
 opt = parser.parse_args()
 opt.dataset = 'soccer'
@@ -92,7 +96,8 @@ if opt.result_root == '':
 if opt.image == '':
     opt.image = opt.data_root + '/test_cnn/' + '00292.jpg'
 if opt.optimizer=='adam':
-    opt.lr = 0.001
+    # opt.lr = 0.001
+    pass
 
 elif opt.optimizer=='sgd':
     opt.lr = 0.001
