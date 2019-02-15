@@ -15,7 +15,7 @@ parser.add_argument('--l2', type=float, default=1e-4, help='l2 parameter')
 parser.add_argument('--optimizer', type=str, default='adam', help='optimizer to use')
 parser.add_argument('--print_every', type=int, default=2, help='print checkpoints')
 parser.add_argument('--save_every', type=int, default=1, help='model checkpoints')
-parser.add_argument('--weight_decay', default=1e-4, help='regularization constant for l_2 regularizer of W')
+parser.add_argument('--weight_decay', default=1e-3, help='regularization constant for l_2 regularizer of W')
 
 parser.add_argument('--drop_p', type=float, default=0.5, help='Dropout Probability')
 parser.add_argument('--resume', type=int, default=0, help='epoch at which training resumes')
@@ -35,7 +35,7 @@ parser.add_argument('--seq_model', default='tcn', help='lstm | tcn')
 parser.add_argument('--seq_dataset', default='toy.seq/npy')
 parser.add_argument('--seq_dataset_root', default='')
 parser.add_argument('--seq_save_out', default='seq_output')
-parser.add_argument('--lr', default=1e-4, type=float)
+parser.add_argument('--lr', default=1e-3, type=float)
 
 parser.add_argument('--seq_real_balls', default='SoccerDataSeq')
 parser.add_argument('--real_balls', default=True, type=bool)
@@ -47,7 +47,7 @@ parser.add_argument('--nhid', default=25, type=int)
 parser.add_argument('--output_size', default=2, type=int)
 parser.add_argument('--levels', default=2, type=int)
 parser.add_argument('--ksize', default=7, type=int)
-parser.add_argument('--dropout', type=float, default=0.1,
+parser.add_argument('--dropout', type=float, default=0.5,
                     help='dropout applied to layers (default: 0.05)')
 
 ###########################################
@@ -64,22 +64,24 @@ parser.add_argument('--min_move_steps', default=30, type=int)
 
 ###########################################
 # save
-parser.add_argument('--seq_resume', default=True, type=bool,
+parser.add_argument('--seq_resume', default=False, type=bool,
                     help='load model for embeddings, if positive then it is number of '
                          'epoch which should be loaded')
 parser.add_argument('--seq_resume_str',
                     default='model/run10t.tcn.ep61.lr1.0e-04_9.pth.tar')
                     # default='model/lstm.ep30_20.pth.tar')
-parser.add_argument('--seq_save_model', default='ft.big.6.')
+parser.add_argument('--seq_save_model', default='ft.small.2_8.1cv.1.')
 
 parser.add_argument('--sweaty_resume_str', default='model/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.5')
 
-parser.add_argument('--save_out', default='output.ft.big.6.')
+parser.add_argument('--save_out', default='output.ft.small.2_8.1cv.1.')
 parser.add_argument('--seq_both_resume', default=True)
 parser.add_argument('--seq_both_resume_str',
                     # default='model/test.big._lr_1e-06_opt_adam_epoch_0'
                     # default='model/test._lr_0.0001_opt_adam_epoch_8')
-                    default='model/ft.small.6._lr_0.0001_opt_adam_epoch_19')
+                    # default='model/ft.small.6._lr_0.0001_opt_adam_epoch_19')
+                    default='model/ft.small.2_8.0._lr_0.0001_opt_adam_epoch_12')
+                    # default='model/ft.small.2_8.1cv.1._lr_1e-05_opt_adam_epoch_20')
 
 opt = parser.parse_args()
 opt.dataset = 'soccer'
@@ -87,7 +89,7 @@ opt.input_size = (640, 480)
 opt.rot_degree = 45
 
 if opt.data_root == '':
-    opt.data_root = 'SoccerData'
+    opt.data_root = 'SoccerData1'
 if opt.model_root == '':
     opt.model_root = 'model/'
 if opt.result_root == '':

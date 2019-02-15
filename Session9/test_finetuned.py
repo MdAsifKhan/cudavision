@@ -64,7 +64,7 @@ else:
 opt.lr = 1e-5
 modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625)
 modeleval.test(0, testloader)
-exit(0)
+# exit(0)
 
 
 testset = RealBallDataset(data_path=opt.seq_real_balls,

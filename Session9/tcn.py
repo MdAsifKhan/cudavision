@@ -16,6 +16,7 @@ import os
 from arguments import opt
 from logging_setup import logger
 from tcn_locuslab import TemporalConvNet
+from util_functions import Averaging
 
 
 class TCN(nn.Module):
@@ -56,6 +57,7 @@ def create_model():
 
 
 def test(dataloader, model):
+    loss = Averaging()
     window = signal.gaussian(opt.window_size, std=4).reshape((-1, 1))
     window = np.dot(window, window.T)
     idx = 0
@@ -94,11 +96,15 @@ def test(dataloader, model):
             pr = [pr_x, pr_y]
             gt = [gt_x, gt_y]
             mse = int(np.sqrt(np.sum(np.square(np.array(pr) - np.array(gt)))))
+            loss.update(mse)
             logger.debug('pr / gt:  %s / %s  |  %s' % (str(pr), str(gt), str(mse)))
             # logger.debug('target : %s' % str([gt_x, gt_y]))
 
 
-            concat = np.hstack((heatmap_pr, heatmap_gt, sweaty_out, out23))
+
+            line = np.ones((heatmap_pr.shape[0], 5)) * np.max(heatmap_gt)
+            concat = np.hstack((heatmap_pr, line, heatmap_gt, line, sweaty_out, line,out23))
+            plt.axis('off')
             pltimg = plt.imshow(concat)
             plt.savefig(os.path.join(opt.save_out, opt.seq_model, 'out%d.pr_gt.png' % idx))
 

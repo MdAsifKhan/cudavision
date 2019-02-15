@@ -32,9 +32,12 @@ class JoinedModel(nn.Module):
                            kernel_size=opt.ksize,
                            dropout=opt.dropout)
             #
-            self.conv1 = nn.Sequential(nn.Conv2d(24, 1, 7, padding=3),
+            self.conv1 = nn.Sequential(nn.Conv2d(112, 1, 7, padding=3),
                                        nn.BatchNorm2d(1),
                                        nn.LeakyReLU())
+            # self.conv1 = nn.Sequential(nn.Conv2d(112, 1, 1, padding=0),
+            #                            nn.BatchNorm2d(1),
+            #                            nn.LeakyReLU())
             # self.conv1 = nn.Sequential(nn.Conv2d(25, 28, 7, padding=3),
             #                            # nn.BatchNorm2d(28),
             #                            nn.LeakyReLU())
@@ -44,7 +47,7 @@ class JoinedModel(nn.Module):
             # self.conv3 = nn.Sequential(nn.Conv2d(14, 1, 3, padding=1),
             #                            # nn.BatchNorm2d(1),
             #                            nn.LeakyReLU())
-            self.alpha = torch.nn.Parameter(torch.Tensor([0.01]))
+            self.alpha = torch.nn.Parameter(torch.Tensor([0.05]))
 
     def forward(self, x):
         x, out23 = self.sweaty(x)
@@ -85,10 +88,19 @@ class JoinedModel(nn.Module):
         checkpoint = checkpoint['state_dict_model']
         self.load_state_dict(checkpoint)
 
+    def off_sweaty(self):
+        for param in self.sweaty.parameters():
+            param.requires_grad = False
+
+    def on_sweaty(self):
+        for param in self.sweaty.parameters():
+            param.requires_grad = True
 
 def create_model():
     torch.manual_seed(opt.manualSeed)
     model = JoinedModel()
+    if not opt.seq_resume:
+        model.off_sweaty()
     if opt.use_gpu:
         model = model.cuda()
     loss = nn.MSELoss()

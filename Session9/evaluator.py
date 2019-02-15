@@ -94,7 +94,7 @@ class ModelEvaluator:
         self.model.train()
         losses = Averaging()
         loss_batch = 0
-        step_lr = 7
+        step_lr = 5
         if epoch % step_lr == 0 and (epoch > 0 or step_lr == 1):
             self.adjust_lr(step=0.1)
         # TP, FP, FN, TN = 0, 0, 0, 0
@@ -213,6 +213,8 @@ class ModelEvaluator:
                                                                self.lr, self.optim, epoch)
                 model_dir = opt.model_root + '/' + model_name
                 torch.save(save_model, model_dir)
+        if not opt.seq_resume and epoch > 5:
+            self.model.on_sweaty()
 
     def plot_loss(self):
         '''

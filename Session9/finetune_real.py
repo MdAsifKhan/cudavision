@@ -45,7 +45,7 @@ trainset = RealBallDataset(data_path=opt.seq_real_balls,
                                transforms.ToTensor(),
                                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                            ]),
-                           small=False)
+                           small=True)
 
 trainloader = torch.utils.data.DataLoader(trainset,
                                           batch_size=1,

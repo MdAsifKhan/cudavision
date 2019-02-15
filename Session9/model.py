@@ -153,8 +153,8 @@ class SweatyNet1(nn.Module):
         #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
         if self.finetune:
             # return out.squeeze(), torch.cat((out2, out3), 1)
-            return out.squeeze(), out2, out8
-            # return out.squeeze(), torch.cat((out2, out8), 1)
+            # return out.squeeze(), out2
+            return out.squeeze(), torch.cat((out2, out8), 1)
         else:
             return out.squeeze()
         
