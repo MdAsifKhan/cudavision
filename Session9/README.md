@@ -1,21 +1,27 @@
 # Soccer Ball Detection using Deep CNN
 
 # Usage
-
+to train
 ```
-python main.py
+python finetune_real.py
+```
+to test
+```
+python test_finetuned.py
 ```
 
 ## Implementation Details
 ```
-model.py
+joined_model.py
+```
+
+
+```
+lstm.py
 ```
 
 ```
-main.py
-```
-```
-finetune.py
+tcn_ed.py
 ```
 
 ```
@@ -23,11 +29,7 @@ evaluator.py
 ```
 
 ```
-dataset.py
-```
-
-```
-prob_map.py
+seq_dataset.py
 ```
 
 ```
