@@ -73,8 +73,6 @@ class BallDataset(Dataset):
             seq = np.zeros((self.h, self.w, self.maxlen))
             seq[..., -frame:] = self.balls[ball_idx][..., :frame]
 
-        # seq_len = min(features.shape[-1], self.maxlen)
-        # seq[..., :seq_len] = features[..., :seq_len]
         seq = seq.transpose(2, 0, 1)
         if opt.seq_model == 'lstm':
             next_steps = self.balls[ball_idx][..., frame: frame + self.prediction].transpose(2, 0, 1)
@@ -88,36 +86,14 @@ class BallDataset(Dataset):
 class RealBallDataset(Dataset):
     def __init__(self, data_path, transform=None, prediction=20, small=False):
         self.dataroot = data_path
-        # self.map_file = map_file
         self.transform = transform
-        # self.ball_frame2idx = {}
         self._small = small
         window = signal.gaussian(opt.window_size, std=3).reshape((-1, 1))
         self.window = np.dot(window, window.T)
 
-        # if opt.seq_model == 'lstm':
-        # self.prediction = prediction
-        # if opt.seq_model == 'tcn':
-        #     self.prediction = 1
-
-        # with h5py.File(self.dataroot + '/' + self.map_file,'r') as hf:
-        #     targets = hf['prob_maps'].value
-        #     targets = np.array(targets).astype('float32')
-        #     filenames = list(hf['filenames'].value)
-        #     box = list(hf['ros'].value)
-
         self.threshold = 0.7
-        # self.images, self.targets, self.box = [], [], []
-        # filenames = [filename.decode('utf-8') for filename in filenames]
-
         self._read_seq()
-        # for ball_idx, i in self.ball_frames:
-        #     ball_filename, _ = self.balls[ball_idx][i]
-            # self.images.append(ball_filename + '.jpg')
-            # idx = filenames.index(ball_filename)
-            # self.ball_frame2idx[i] = idx
-            # self.targets.append(targets[idx])
-            # self.box.append(box[idx].astype('float32'))
+
 
     def _read_seq(self):
         self.balls = {}
@@ -172,11 +148,6 @@ class RealBallDataset(Dataset):
                 seq = torch.cat((img, seq))
         if len(filenames) < opt.hist:
             raise IndexError
-        #     seq_z = torch.zeros(opt.hist - len(filenames), img.shape[1], img.shape[2], img.shape[3])
-        #     seq = torch.cat((seq_z, seq))
-        # if opt.seq_model == 'tcn':
-        #     return seq, np.asarray(gt_center, dtype=float)
-        # if opt.seq_model == 'lstm':
         if opt.seq_predict > 1:
             heatmap = np.zeros((opt.seq_predict, opt.map_size_x, opt.map_size_y), dtype=np.float32)
             for idx in range(opt.seq_predict):
@@ -190,16 +161,8 @@ class RealBallDataset(Dataset):
             x,y = gt_center
             x_r = opt.window_size if x + opt.window_size < opt.map_size_x else opt.map_size_x - x
             y_r = opt.window_size if y + opt.window_size < opt.map_size_y else opt.map_size_y - y
-            # if x_r < 0 or y_r < 0:
-            #     return seq, heatmap
-            # print(x, y)
-            # print(x_r, y_r)
             heatmap[x:x + x_r, y:y + y_r] = self.window[:x_r, :y_r]
         return seq, heatmap
-        #img = np.asarray(img).transpose(2, 0, 1)/255.0
-        #img = torch.from_numpy(img).float()
-        # prob_ = self.targets[idx]
-        # coord_ = self.box[idx]
 
 
 if __name__ == '__main__':

@@ -32,11 +32,9 @@ class ModelEvaluator:
         self.test_loss = []
         self.iter_loss_train = []
         self.iter_loss_test = []
-        # self.loss = nn.MSELoss(reduction='sum')
         self.loss = loss
         self.optim = opt.optimizer
         self.resume = opt.resume
-        #self.threshold = threshold
         self.min_radius = min_radius
         self.threshold = threshold
         self.fdr_train = []
@@ -52,26 +50,6 @@ class ModelEvaluator:
         self.optim_both = optim_both
         self.both = False
 
-        # parameters = self.model.parameters()
-        # if self.optim == 'adam':
-        #     self.optimizer = torch.optim.Adam(parameters, lr=opt.lr,
-        #                                       weight_decay=1e-4)
-        # elif self.optim == 'sgd':
-        #     self.optimizer = torch.optim.SGD(parameters, lr=opt.lr,
-        #                                      momentum=opt.mom)
-        # elif self.optim == 'adadelta':
-        #     self.optimizer = torch.optim.Adadelta(parameters,
-        #                                           lr=opt.lr, eps=opt.eps,
-        #                                           weight_decay=opt.decay)
-        # elif self.optim == 'adagrad':
-        #     self.optimizer = torch.optim.Adagrad(parameters, lr=lr,
-        #                                          lr_decay=opt.lr_decay, weight_decay=opt.decay)
-        # elif self.optim == 'rmsprop':
-        #     self.optimizer = torch.optim.RMSprop(parameters, lr=lr,
-        #                                          alpha=opt.alpha, eps=opt.eps,
-        #                                          weight_decay=opt.decay)
-        # else:
-        #     ValueError('Optimizer Not Supported')
 
     def l2_regularization(self, loss, lam):
         '''
@@ -122,25 +100,12 @@ class ModelEvaluator:
 
             losses.update(loss.item(), train_data.size(0))
 
-            # threshold = 0.7*train_data.max()
-            # if threshold>self.threshold:
-            #     self.threshold = threshold
-
-            # if self.l2:
-            #     loss = self.l2_regularization(loss, self.l2)
             self.model.zero_grad()
             loss.backward()
             if self.both:
-                # self.optim_both.zero_grad()
                 self.optim_both.step()
             else:
-                # self.optim_seq.zero_grad()
                 self.optim_seq.step()
-            # self.optimizer.zero_grad()
-            # loss.backward()
-            # self.optimizer.step()
-
-            # if loss > 1000:
 
             if b_idx % opt.print_every == 0:
                 # logger.debug('%s | %s' % (str(train_labels), str(output)))
@@ -154,11 +119,6 @@ class ModelEvaluator:
             loss_batch += loss_
         losses.reset()
 
-        # FDR_train, RC_train, accuracy_train = performance_metric_alternative(TP, FP, FN, TN)
-        # self.fdr_train.append(FDR_train)
-        # self.accuracy_train.append(accuracy_train)
-        # self.RC_train.append(RC_train)
-        
         loss_batch /= len(trainloader)
 
         logger.debug('Epoch = {} '.format(epoch))
@@ -211,9 +171,6 @@ class ModelEvaluator:
         train and validate model
         '''
         resume_epoch = 0
-        # if self.resume:
-        #     checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}.pth'.format(self.lr, self.optim, epoch))
-        #     self.model.load_state_dict(checkpoint)
         logger.debug('Model')
         self.model.off_sweaty()
         for epoch in range(resume_epoch, self.epochs):

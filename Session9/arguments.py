@@ -68,34 +68,24 @@ parser.add_argument('--seq_resume', default=True, type=bool,
                          'epoch which should be loaded')
 parser.add_argument('--seq_resume_str',
                     default='model/tcn_ed/tcn_ed2_1.tcn_ed.ep60.lr1.0e-03_20.pth.tar')
-                    # default='model/lstm/test.lstm.lstm.ep60.lr1.0e-03_20.pth.tar')
-                    # default='model/lstm.ep30_20.pth.tar')
 parser.add_argument('--seq_save_model', default='tcn.big.ft.')
 parser.add_argument('--sweaty_resume_str', default='model/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.5')
 
 parser.add_argument('--save_out', default='tcn_ed_1')
 parser.add_argument('--seq_both_resume', default=True)
 parser.add_argument('--seq_both_resume_str',
-                    # default='model/test.big._lr_1e-06_opt_adam_epoch_0'
-                    # default='model/test._lr_0.0001_opt_adam_epoch_8')
-                    # default='model/ft.small.6._lr_0.0001_opt_adam_epoch_19')
                     default='model/tcn.big.ft._lr_1e-05_opt_adam_epoch_18')
-                    # default='model/lstm.big.scr._lr_0.0001_opt_adam_epoch_5')
-                    # default='models_out/lstm.small.ft._lr_1e-05_opt_adam_epoch_10')
-                    # default='models_out/tcn.big.scr._lr_0.0001_opt_adam_epoch_10')
-
-                    # default='model/test.ft.small._lr_0.0001_opt_adam_epoch_76')
 
 parser.add_argument('--device', default='cuda')
 parser.add_argument('--suffix', default='final')
-parser.add_argument('--seq_predict', default=1, type=int)
-parser.add_argument('--model', default='tcn')
+parser.add_argument('--seq_predict', default=2, type=int)
 parser.add_argument('--seq_model', default='tcn', help='lstm | tcn')
 
 opt = parser.parse_args()
 opt.dataset = 'soccer'
 opt.input_size = (640, 480)
 opt.rot_degree = 45
+opt.seq_predict = 1 if opt.seq_model == 'tcn' else 2
 
 if opt.data_root == '':
     opt.data_root = 'SoccerData1'

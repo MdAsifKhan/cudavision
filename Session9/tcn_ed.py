@@ -79,32 +79,13 @@ class TCN_ED(nn.Module):
             else:
                 layers += [conv, chomp, dropout, nn.Sigmoid()]
 
-        # self.fc = nn.Linear(output_dim, n_outputs)
-        # self.sigmoid = nn.Sigmoid()
-        # self.relu = nn.ReLU()
         self.net = nn.Sequential(*layers)
-
-    def encode(self, x, l):
-        x = x.view(-1, opt.map_size_x * opt.map_size_y)
-        mu, logvar = self.vae.encode(x)
-        x = self.vae.reparameterize(mu, logvar)
-        x = x.view(-1, l, opt.vae_dim)
-        return x
-
-    def decode(self, x):
-        x = self.net(x)
-        x = x.view(-1, opt.vae_dim)
-        x = self.vae.decode(x)
-        x = x.view(-1, opt.seq_predict, opt.map_size_x, opt.map_size_y)
-        return x
 
     def forward(self, x):
         x = x.view(-1, opt.hist,  opt.map_size_x * opt.map_size_y)
         x = self.net(x)
-        # x = self.sigmoid(self.net(x))
         x = x.view(-1, opt.seq_predict, opt.map_size_x, opt.map_size_y)
         return x
-
 
 
 def create_model():
@@ -112,18 +93,10 @@ def create_model():
     n_nodes = [64, 96]
     model = TCN_ED(n_nodes, opt.hist, opt.seq_predict, opt.ksize).to(opt.device)
     model.apply(init_weights)
-    # if 'bce' in opt.suffix:
-    #     loss = nn.BCELoss(reduction='sum')
-    # if 'mse' in opt.suffix:
 
     # loss = nn.MSELoss(reduction='sum')
     loss = nn.MSELoss()
 
-    #apply optimization only on the TCN part without vae embedding
-    # optimizer = torch.optim.RMSprop(list(model.net.parameters()) +
-    #                                 list(model.fc.parameters()),
-    #                                 lr=opt.lr,
-    #                                 weight_decay=opt.weight_decay)
     optimizer = torch.optim.Adam(list(model.net.parameters()),
                                  # list(model.fc.parameters()),
                                  lr=opt.lr,
@@ -132,6 +105,7 @@ def create_model():
     logger.debug(str(loss))
     logger.debug(str(optimizer))
     return model, loss, optimizer
+
 
 def test(dataloader, model, out=False):
     model.eval()

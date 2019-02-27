@@ -17,9 +17,7 @@ from arguments import opt
 from logging_setup import path_logger, logger
 from seq_dataset import BallDataset, RealBallDataset
 import lstm
-import tcn
 import tcn_ed
-from training_net import training
 from util_functions import dir_check
 import joined_model
 from evaluator import ModelEvaluator
@@ -35,11 +33,10 @@ vars_iter = list(vars(opt))
 for arg in sorted(vars_iter):
     logger.debug('%s: %s' % (arg, getattr(opt, arg)))
 
+opt.model = opt.seq_model
+
 testset = SoccerDataSet(data_path=opt.data_root + '/test_cnn', map_file='test_maps',
                         transform=transforms.Compose([
-                            # transforms.RandomResizedCrop(opt.input_size[1]),
-                            # transforms.RandomHorizontalFlip(),
-                            # transforms.RandomRotation(opt.rot_degree),
                             transforms.ColorJitter(brightness=0.3,
                                                    contrast=0.4, saturation=0.4),
                             transforms.ToTensor(),
@@ -68,14 +65,11 @@ modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625,
                            loss=loss)
 logger.debug('start')
 modeleval.test(0, testloader)
-exit(0)
+# exit(0)
 
 
 testset = RealBallDataset(data_path=opt.seq_real_balls,
                            transform=transforms.Compose([
-                               # transforms.RandomResizedCrop(opt.input_size[1]),
-                               # transforms.RandomHorizontalFlip(),
-                               # transforms.RandomRotation(opt.rot_degree),
                                transforms.ColorJitter(brightness=0.3,
                                                       contrast=0.4, saturation=0.4),
                                transforms.ToTensor(),

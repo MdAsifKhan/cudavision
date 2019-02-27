@@ -16,9 +16,6 @@ import random
 from arguments import opt
 from logging_setup import path_logger, logger
 from seq_dataset import BallDataset, RealBallDataset
-import lstm
-from training_net import training
-from util_functions import dir_check
 import joined_model
 from evaluator import ModelEvaluator
 from dataset import SoccerDataSet
@@ -33,6 +30,7 @@ vars_iter = list(vars(opt))
 for arg in sorted(vars_iter):
     logger.debug('%s: %s' % (arg, getattr(opt, arg)))
 
+opt.model = opt.seq_model
 
 # trainset = BallDataset(opt.seq_dataset)
 trainset = RealBallDataset(data_path=opt.seq_real_balls,
@@ -56,9 +54,6 @@ trainloader = torch.utils.data.DataLoader(trainset,
 
 testset = SoccerDataSet(data_path=opt.data_root + '/test_cnn', map_file='test_maps',
                         transform=transforms.Compose([
-                            # transforms.RandomResizedCrop(opt.input_size[1]),
-                            # transforms.RandomHorizontalFlip(),
-                            # transforms.RandomRotation(opt.rot_degree),
                             transforms.ColorJitter(brightness=0.3,
                                                    contrast=0.4, saturation=0.4),
                             transforms.ToTensor(),
@@ -70,23 +65,6 @@ testloader = torch.utils.data.DataLoader(testset,
                                          shuffle=False,
                                          num_workers=opt.workers,
                                          drop_last=True)
-
-# t = SoccerDataSet(data_path=opt.data_root + '/train_cnn', map_file='train_maps',
-#                         transform=transforms.Compose([
-#                             # transforms.RandomResizedCrop(opt.input_size[1]),
-#                             # transforms.RandomHorizontalFlip(),
-#                             # transforms.RandomRotation(opt.rot_degree),
-#                             transforms.ColorJitter(brightness=0.3,
-#                                                    contrast=0.4, saturation=0.4),
-#                             transforms.ToTensor(),
-#                             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-#                         ]))
-
-# model = training(dataloader, opt.nm_epochs, save=opt.seq_save_model,
-#                  model=model,
-#                  optimizer=optimizer,
-#                  loss=loss,
-#                  name=opt.seq_model)
 
 opt.batch_size = opt.hist
 
