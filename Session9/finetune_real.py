@@ -45,7 +45,7 @@ trainset = RealBallDataset(data_path=opt.seq_real_balls,
                                transforms.ToTensor(),
                                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                            ]),
-                           small=True)
+                           small=False)
 
 trainloader = torch.utils.data.DataLoader(trainset,
                                           batch_size=1,
@@ -90,12 +90,15 @@ testloader = torch.utils.data.DataLoader(testset,
 
 opt.batch_size = opt.hist
 
-model, loss, optimizer = joined_model.create_model()
+model, loss, optimizer_seq, optimizer_both = joined_model.create_model()
 model.resume_sweaty(os.path.abspath(opt.sweaty_resume_str))
 if opt.seq_resume:
     model.resume_seq(os.path.abspath(opt.seq_resume_str))
 
-modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625)
-modeleval.evaluator(trainloader, testloader)
+modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625,
+                           optim_seq=optimizer_seq,
+                           optim_both=optimizer_both,
+                           loss=loss)
+modeleval.evaluator(trainloader, testloader, both=0)
 modeleval.plot_loss()
 

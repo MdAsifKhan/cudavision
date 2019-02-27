@@ -100,8 +100,6 @@ def test(dataloader, model):
             logger.debug('pr / gt:  %s / %s  |  %s' % (str(pr), str(gt), str(mse)))
             # logger.debug('target : %s' % str([gt_x, gt_y]))
 
-
-
             line = np.ones((heatmap_pr.shape[0], 5)) * np.max(heatmap_gt)
             concat = np.hstack((heatmap_pr, line, heatmap_gt, line, sweaty_out, line,out23))
             plt.axis('off')

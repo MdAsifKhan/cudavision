@@ -92,11 +92,13 @@ class RealBallDataset(Dataset):
         self.transform = transform
         # self.ball_frame2idx = {}
         self._small = small
+        window = signal.gaussian(opt.window_size, std=3).reshape((-1, 1))
+        self.window = np.dot(window, window.T)
 
-        if opt.seq_model == 'lstm':
-            self.prediction = prediction
-        if opt.seq_model == 'tcn':
-            self.prediction = 1
+        # if opt.seq_model == 'lstm':
+        # self.prediction = prediction
+        # if opt.seq_model == 'tcn':
+        #     self.prediction = 1
 
         # with h5py.File(self.dataroot + '/' + self.map_file,'r') as hf:
         #     targets = hf['prob_maps'].value
@@ -139,7 +141,7 @@ class RealBallDataset(Dataset):
                         ball.append([ball_filename, ball_center])
                         self.filenames.append(ball_filename)
                     self.balls[ball_idx] = ball
-                    for i in range(1, len(ball) - self.prediction):
+                    for i in range(opt.hist, len(ball) - opt.seq_predict):
                         self.ball_frames.append([ball_idx, i])
 
     def __len__(self):
@@ -169,16 +171,31 @@ class RealBallDataset(Dataset):
             else:
                 seq = torch.cat((img, seq))
         if len(filenames) < opt.hist:
-            seq_z = torch.zeros(opt.hist - len(filenames), img.shape[1], img.shape[2], img.shape[3])
-            seq = torch.cat((seq_z, seq))
-        if opt.seq_model == 'tcn':
-            return seq, np.asarray(gt_center, dtype=float)
-        if opt.seq_model == 'lstm':
+            raise IndexError
+        #     seq_z = torch.zeros(opt.hist - len(filenames), img.shape[1], img.shape[2], img.shape[3])
+        #     seq = torch.cat((seq_z, seq))
+        # if opt.seq_model == 'tcn':
+        #     return seq, np.asarray(gt_center, dtype=float)
+        # if opt.seq_model == 'lstm':
+        if opt.seq_predict > 1:
+            heatmap = np.zeros((opt.seq_predict, opt.map_size_x, opt.map_size_y), dtype=np.float32)
+            for idx in range(opt.seq_predict):
+                _, (x,y) = self.balls[ball_idx][frame]
+                x_r = opt.window_size if x + opt.window_size < opt.map_size_x else abs(opt.map_size_x - x)
+                y_r = opt.window_size if y + opt.window_size < opt.map_size_y else abs(opt.map_size_y - y)
+                heatmap[idx, x:x + x_r, y:y + y_r] = self.window[:x_r, :y_r]
+                frame += 1
+        else:
             heatmap = np.zeros((opt.map_size_x, opt.map_size_y), dtype=np.float32)
-            window = signal.gaussian(opt.window_size, std=3).reshape((-1, 1))
             x,y = gt_center
-            heatmap[x:x + opt.window_size, y:y + opt.window_size] = window
-            return seq, heatmap
+            x_r = opt.window_size if x + opt.window_size < opt.map_size_x else opt.map_size_x - x
+            y_r = opt.window_size if y + opt.window_size < opt.map_size_y else opt.map_size_y - y
+            # if x_r < 0 or y_r < 0:
+            #     return seq, heatmap
+            # print(x, y)
+            # print(x_r, y_r)
+            heatmap[x:x + x_r, y:y + y_r] = self.window[:x_r, :y_r]
+        return seq, heatmap
         #img = np.asarray(img).transpose(2, 0, 1)/255.0
         #img = torch.from_numpy(img).float()
         # prob_ = self.targets[idx]

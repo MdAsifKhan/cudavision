@@ -14,7 +14,7 @@ import h5py
 
 
 class ModelEvaluator:
-    def __init__(self, model, min_radius, threshold):
+    def __init__(self, model, min_radius, threshold, optim_seq, optim_both, loss):
         '''
         model: instance of pytorch model class
         epochs: number of training epochs
@@ -32,7 +32,8 @@ class ModelEvaluator:
         self.test_loss = []
         self.iter_loss_train = []
         self.iter_loss_test = []
-        self.loss = nn.MSELoss(reduction='sum')
+        # self.loss = nn.MSELoss(reduction='sum')
+        self.loss = loss
         self.optim = opt.optimizer
         self.resume = opt.resume
         #self.threshold = threshold
@@ -47,26 +48,30 @@ class ModelEvaluator:
         if self.use_gpu:
             self.model.cuda()
 
-        parameters = self.model.parameters()
-        if self.optim == 'adam':
-            self.optimizer = torch.optim.Adam(parameters, lr=opt.lr,
-                                              weight_decay=1e-4)
-        elif self.optim == 'sgd':
-            self.optimizer = torch.optim.SGD(parameters, lr=opt.lr,
-                                             momentum=opt.mom)
-        elif self.optim == 'adadelta':
-            self.optimizer = torch.optim.Adadelta(parameters,
-                                                  lr=opt.lr, eps=opt.eps,
-                                                  weight_decay=opt.decay)
-        elif self.optim == 'adagrad':
-            self.optimizer = torch.optim.Adagrad(parameters, lr=lr,
-                                                 lr_decay=opt.lr_decay, weight_decay=opt.decay)
-        elif self.optim == 'rmsprop':
-            self.optimizer = torch.optim.RMSprop(parameters, lr=lr,
-                                                 alpha=opt.alpha, eps=opt.eps,
-                                                 weight_decay=opt.decay)
-        else:
-            ValueError('Optimizer Not Supported')
+        self.optim_seq = optim_seq
+        self.optim_both = optim_both
+        self.both = False
+
+        # parameters = self.model.parameters()
+        # if self.optim == 'adam':
+        #     self.optimizer = torch.optim.Adam(parameters, lr=opt.lr,
+        #                                       weight_decay=1e-4)
+        # elif self.optim == 'sgd':
+        #     self.optimizer = torch.optim.SGD(parameters, lr=opt.lr,
+        #                                      momentum=opt.mom)
+        # elif self.optim == 'adadelta':
+        #     self.optimizer = torch.optim.Adadelta(parameters,
+        #                                           lr=opt.lr, eps=opt.eps,
+        #                                           weight_decay=opt.decay)
+        # elif self.optim == 'adagrad':
+        #     self.optimizer = torch.optim.Adagrad(parameters, lr=lr,
+        #                                          lr_decay=opt.lr_decay, weight_decay=opt.decay)
+        # elif self.optim == 'rmsprop':
+        #     self.optimizer = torch.optim.RMSprop(parameters, lr=lr,
+        #                                          alpha=opt.alpha, eps=opt.eps,
+        #                                          weight_decay=opt.decay)
+        # else:
+        #     ValueError('Optimizer Not Supported')
 
     def l2_regularization(self, loss, lam):
         '''
@@ -92,9 +97,10 @@ class ModelEvaluator:
         method for training
         '''
         self.model.train()
+        self.model = self.model.cuda()
         losses = Averaging()
         loss_batch = 0
-        step_lr = 5
+        step_lr = 50
         if epoch % step_lr == 0 and (epoch > 0 or step_lr == 1):
             self.adjust_lr(step=0.1)
         # TP, FP, FN, TN = 0, 0, 0, 0
@@ -103,32 +109,41 @@ class ModelEvaluator:
             train_labels = train_labels.float()
             if opt.real_balls:
                 train_data = train_data.squeeze()
+                train_labels = train_labels.view(-1, opt.seq_predict, opt.map_size_x, opt.map_size_y)
             if self.use_gpu:
                 train_data = train_data.cuda(non_blocking=True)
                 train_labels = train_labels.cuda()
             if opt.seq_model == 'lstm':
                 output, (h, cc) = self.model(train_data)
-                loss = self.loss(output[0][:, 0], train_labels)
+                loss = self.loss(output[0], train_labels)
             if opt.seq_model == 'tcn':
                 output = self.model(train_data)
                 loss = self.loss(output, train_labels)
 
             losses.update(loss.item(), train_data.size(0))
 
-            threshold = 0.7*train_data.max()
-            if threshold>self.threshold:
-                self.threshold = threshold
+            # threshold = 0.7*train_data.max()
+            # if threshold>self.threshold:
+            #     self.threshold = threshold
 
             # if self.l2:
             #     loss = self.l2_regularization(loss, self.l2)
-            self.optimizer.zero_grad()
+            self.model.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            if self.both:
+                # self.optim_both.zero_grad()
+                self.optim_both.step()
+            else:
+                # self.optim_seq.zero_grad()
+                self.optim_seq.step()
+            # self.optimizer.zero_grad()
+            # loss.backward()
+            # self.optimizer.step()
 
             # if loss > 1000:
 
             if b_idx % opt.print_every == 0:
-                logger.debug('%s | %s' % (str(train_labels), str(output)))
+                # logger.debug('%s | %s' % (str(train_labels), str(output)))
                 logger.debug('Train Epoch: {0} [{1}/{2} ({3:.0f}%)]\t Loss {4:<10.3f} \ {5:>10.3f}'.
                              format(epoch, b_idx * len(train_data),
                                     len(trainloader) * len(train_data),
@@ -158,7 +173,7 @@ class ModelEvaluator:
         TP, FP, FN, TN = 0, 0, 0, 0
         with torch.no_grad():
             batch_loss = 0
-            for test_data, test_labels, actual_centers in testloader:
+            for idx, (test_data, test_labels, actual_centers) in enumerate(testloader):
                 if self.use_gpu:
                     test_data, test_labels = test_data.cuda(), test_labels.cuda()
                 # output = self.model(test_data)
@@ -191,7 +206,7 @@ class ModelEvaluator:
 
             self.test_loss.append(batch_loss)
 
-    def evaluator(self, trainloader, testloader, print_every=1000):
+    def evaluator(self, trainloader, testloader, print_every=1000, both=0):
         '''
         train and validate model
         '''
@@ -200,11 +215,14 @@ class ModelEvaluator:
         #     checkpoint, resume_epoch = self.load_model('/Model_lr_{}_opt_{}_epoch_{}.pth'.format(self.lr, self.optim, epoch))
         #     self.model.load_state_dict(checkpoint)
         logger.debug('Model')
-        logger.debug(str(self.model))
+        self.model.off_sweaty()
         for epoch in range(resume_epoch, self.epochs):
+            if epoch == both:
+                self.both = True
+                self.model.on_sweaty()
             self.test(epoch, testloader)
             self.train(epoch, trainloader, print_every=print_every)
-            print (self.threshold)
+            logger.debug('threshold: %s' % str(self.threshold))
             if epoch % opt.save_every==0:
                 save_model = {'threshold': self.threshold,
                               'epoch': epoch,
@@ -213,8 +231,6 @@ class ModelEvaluator:
                                                                self.lr, self.optim, epoch)
                 model_dir = opt.model_root + '/' + model_name
                 torch.save(save_model, model_dir)
-        if not opt.seq_resume and epoch > 5:
-            self.model.on_sweaty()
 
     def plot_loss(self):
         '''

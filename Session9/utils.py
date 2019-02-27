@@ -112,6 +112,7 @@ def post_processing(maps, threshold):
     return processed_maps, predicted_centers, maps_area
 
 def tp_fp_tn_fn_alt(actual_centers, predicted_centers, maps_area, min_radius):
+    min_radius=5
 
     minm_area = min_radius**2
     TP, FP, TN, FN = 0, 0, 0, 0

@@ -18,6 +18,7 @@ from logging_setup import path_logger, logger
 from seq_dataset import BallDataset, RealBallDataset
 import lstm
 import tcn
+import tcn_ed
 from training_net import training
 from util_functions import dir_check
 import joined_model
@@ -53,7 +54,7 @@ testloader = torch.utils.data.DataLoader(testset,
 
 opt.batch_size = opt.hist
 
-model, loss, optimizer = joined_model.create_model()
+model, loss, optim_seq, optim_both = joined_model.create_model()
 if opt.seq_both_resume:
     model.resume_both(os.path.abspath(opt.seq_both_resume_str))
 else:
@@ -62,9 +63,12 @@ else:
         model.resume_seq(os.path.abspath(opt.seq_resume_str))
 
 opt.lr = 1e-5
-modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625)
+modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625,
+                           optim_seq=optim_seq, optim_both=optim_both,
+                           loss=loss)
+logger.debug('start')
 modeleval.test(0, testloader)
-# exit(0)
+exit(0)
 
 
 testset = RealBallDataset(data_path=opt.seq_real_balls,
@@ -89,6 +93,8 @@ dir_check(os.path.join(opt.save_out, opt.seq_model))
 model.eval()
 model = model.cuda()
 if opt.seq_model == 'lstm':
-    lstm.test(testloader, model)
+    lstm.test(testloader, model, out=True)
 if opt.seq_model == 'tcn':
-    tcn.test(testloader, model)
+    # tcn.test(testloader, model)
+    tcn_ed.test(testloader, model, out=True)
+
