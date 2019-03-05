@@ -3,8 +3,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--dataset', required=False, help='soccer| sequence', default='soccer')
-parser.add_argument('--data_root', required=False, help='path to dataset', default='')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--net', required=False, help='net1| net2| net3', default='net1')
 
@@ -28,7 +26,13 @@ parser.add_argument('--xml', required=False, help='test xml path', default=None)
 parser.add_argument('--test_epoch', required=False, help='test xml path', default=10, type=int)
 
 
-######################################################################################
+
+###########################################
+# dataset
+parser.add_argument('--dataset', required=False, help='soccer| sequence', default='soccer')
+parser.add_argument('--data_root', required=False, help='path to dataset', default='')
+
+###########################################
 # sequential part
 
 parser.add_argument('--seq_dataset', default='toy.seq/npy')
