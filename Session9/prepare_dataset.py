@@ -35,7 +35,7 @@ if opt.dataset == 'provided':
     data_root = 'toy.seq'
     if not os.path.exists(data_root):
         opt.balls_folder = data_root
-        opt.n_balls = 1000
+        opt.n_balls = 100
         toy_seq.create()
         opt.balls_folder = 'test.' + data_root
         opt.n_balls = 100
