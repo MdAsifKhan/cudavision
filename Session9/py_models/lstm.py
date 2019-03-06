@@ -58,7 +58,7 @@ def test(dataloader, model, out=False):
             start = time.time()
             output, (h, cc) = model(data)
             end = time.time()
-            logger.debug('time: %s' % str(end - start))
+            # logger.debug('time: %s' % str(end - start))
             output = output[0].cpu().numpy().squeeze()
 
             img = None
