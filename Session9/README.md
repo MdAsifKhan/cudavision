@@ -1,35 +1,46 @@
 # Soccer Ball Detection using Deep CNN
 
 # Usage
-to train
+prepare datasets
 ```
-python finetune_real.py
+python prepare_dataset.py
 ```
-to test
+to reproduce best numbers
 ```
-python test_finetuned.py
+python test.py --reproduce=best
 ```
+to reproduce all numbers
+```
+python test.py --reproduce=all
+```
+to evaluate on new data
+```
+python test.py --dataset=new --data_root=/root_folder_of_dataset/
+```
+structure for the new data should be like in testDataset where each line of the ball.txt is relative path to the image, y center position, x center position, y resolution of image, x resolutionn of image
+
+the result output of the network you can find in the folder 'seq_output'
 
 ## Implementation Details
 ```
-joined_model.py
+py_models/joined_model.py
 ```
 
 
 ```
-lstm.py
+py_models/lstm.py
 ```
 
 ```
-tcn_ed.py
+py_models/tcn_ed.py
 ```
 
 ```
-evaluator.py
+py_train/evaluator.py
 ```
 
 ```
-seq_dataset.py
+py_dataset/seq_dataset.py
 ```
 
 ```
