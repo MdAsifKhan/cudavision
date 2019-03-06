@@ -114,7 +114,7 @@ def test(dataloader, model, out=False):
     dir_check(os.path.join(opt.save_out, opt.model, opt.suffix))
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
-            if i % 5:
+            if i % 50:
                 continue
             data = data.float().squeeze()
             target = target.float().numpy().squeeze()
@@ -124,7 +124,7 @@ def test(dataloader, model, out=False):
             start = time.time()
             output = model(data).to('cpu').numpy().squeeze()
             end = time.time()
-            logger.debug('time: %s' % str(end - start))
+            # logger.debug('time: %s' % str(end - start))
             img = None
             color = np.max(output)
             if len(output.shape) == 2:
@@ -162,7 +162,7 @@ def test(dataloader, model, out=False):
                 plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'hist%d.png' % i))
                 plt.axis('off')
                 tmp_img = plt.imshow(tmp_img)
-                plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'out%d.png' % i))
+                plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'real.gt.pr.%d.png' % i))
 
 
 

@@ -159,10 +159,11 @@ class SweatyNet1(nn.Module):
             return out.squeeze()
         
 class SweatyNet2(nn.Module):
-    def __init__(self, nc, drop_p):
+    def __init__(self, nc, drop_p, finetune=False):
         super(SweatyNet2,self).__init__()
         self.nc = nc
         self.drop_p = drop_p
+        self.finetune = finetune
 
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
@@ -278,14 +279,19 @@ class SweatyNet2(nn.Module):
 
         out = self.layer14(self.layer13(self.layer12(out8)))
         #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
+        if self.finetune:
+            # return out.squeeze(), torch.cat((out2, out3), 1)
+            # return out.squeeze(), out2
+            return out.squeeze(), torch.cat((out2, out8), 1)
         
         return out.squeeze()
 
 class SweatyNet3(nn.Module):
-    def __init__(self, nc, drop_p):
+    def __init__(self, nc, drop_p, finetune=False):
         super(SweatyNet3, self).__init__()
         self.nc = nc
         self.drop_p = drop_p
+        self.finetune = finetune
 
         self.layer1 = nn.Sequential(
                         nn.Conv2d(3, 8, 3, padding=1),
@@ -439,5 +445,9 @@ class SweatyNet3(nn.Module):
         out = self.layer20(self.layer19(self.layer18(out8)))
         out = self.drop(out)
         #out = F.softmax(out.squeeze().view(out.shape[0], -1)).view(out.shape[0], out.shape[2], out.shape[3])
+        if self.finetune:
+            # return out.squeeze(), torch.cat((out2, out3), 1)
+            # return out.squeeze(), out2
+            return out.squeeze(), torch.cat((out2, out8), 1)
         return out.squeeze()
 

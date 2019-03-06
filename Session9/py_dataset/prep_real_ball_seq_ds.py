@@ -12,7 +12,7 @@ import numpy as np
 
 from arguments import opt
 
-save_path = os.path.join(opt.seq_real_balls, 'balls')
+save_path = os.path.join(opt.data_root_seq, 'balls')
 # save_path = os.path.join(os.path.abspath(dataset_root), 'npy')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
@@ -54,43 +54,41 @@ class Ball:
         return coord
 
 
-balls = []
-path = 'SoccerDataSeq'
+def create():
+    balls = []
+    path = 'SoccerDataSeq'
+
+    def keyf(line):
+        try:
+            n = int(re.search(r'frame(\d*).jpg', line).group(1))
+        except AttributeError:
+            return 0
+        return n
+
+    for filename in os.listdir(path):
+        if not filename.endswith('txt'):
+            continue
+        with open(os.path.join(path, filename), 'r') as f:
+            filename = int(filename.split('.')[0][-3:])
+            ball = Ball(filename)
+            lines = f.read().split('\n')
+            lines = sorted(lines, key=keyf)
+            # for line_idx, line in enumerate(f):
+            for line_idx, line in enumerate(lines):
+                if not line.startswith('label::ball'):
+                    continue
+                line = line.split('|')
+                frame = int(re.search(r'frame(\d*).jpg', line[1]).group(1))
+                # y,x = list(map(lambda x: int(x.split('.')[0]), line[-4:-2]))
+                y,x = list(map(lambda x: int(x), line[-8:-6]))
+                if not ball.next_frame(x, y, frame):
+                    if ball.valid:
+                        balls.append(ball)
+                    ball = Ball(filename)
+
+    for ball_idx, ball in enumerate(balls):
+        np.savetxt(os.path.join(save_path, 'ball%d.txt' % ball_idx), ball.centers(), fmt='%d')
 
 
-def keyf(line):
-    try:
-        n = int(re.search(r'frame(\d*).jpg', line).group(1))
-    except AttributeError:
-        return 0
-    return n
-
-
-for filename in os.listdir(path):
-    if not filename.endswith('txt'):
-        continue
-    with open(os.path.join(path, filename), 'r') as f:
-        filename = int(filename.split('.')[0][-3:])
-        ball = Ball(filename)
-        lines = f.read().split('\n')
-        lines = sorted(lines, key=keyf)
-        # for line_idx, line in enumerate(f):
-        for line_idx, line in enumerate(lines):
-            if not line.startswith('label::ball'):
-                continue
-            line = line.split('|')
-            frame = int(re.search(r'frame(\d*).jpg', line[1]).group(1))
-            # y,x = list(map(lambda x: int(x.split('.')[0]), line[-4:-2]))
-            y,x = list(map(lambda x: int(x), line[-8:-6]))
-            if not ball.next_frame(x, y, frame):
-                if ball.valid:
-                    balls.append(ball)
-                ball = Ball(filename)
-
-
-for ball_idx, ball in enumerate(balls):
-    np.savetxt(os.path.join(save_path, 'ball%d.txt' % ball_idx), ball.centers(), fmt='%d')
-
-
-
-
+if __name__ == '__main__':
+    create()

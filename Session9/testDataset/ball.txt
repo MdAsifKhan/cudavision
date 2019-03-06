@@ -1,0 +1,2 @@
+images/frame0448.jpg 428 287 480 640
+images/frame0448.jpg 428 291 480 640

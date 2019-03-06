@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 from arguments import opt
-from py_models.model import SweatyNet1
+from py_models.model import SweatyNet1, SweatyNet2, SweatyNet3
 from py_models.lstm import LSTM
 from py_utils.logging_setup import logger
 from py_models.tcn_ed import TCN_ED
@@ -29,7 +29,12 @@ class Weight(nn.Module):
 class JoinedModel(nn.Module):
     def __init__(self):
         super(JoinedModel, self).__init__()
-        self.sweaty = SweatyNet1(1, opt.drop_p, finetune=True)
+        if opt.net == 'net1':
+            self.sweaty = SweatyNet1(1, opt.drop_p, finetune=True)
+        if opt.net == 'net2':
+            self.sweaty = SweatyNet2(1, opt.drop_p, finetune=True)
+        if opt.net == 'net3':
+            self.sweaty = SweatyNet3(1, opt.drop_p, finetune=True)
         if opt.seq_model == 'lstm':
             self.seq = LSTM()
         if opt.seq_model == 'tcn':
@@ -89,7 +94,7 @@ def create_model():
     model = JoinedModel()
     if not opt.seq_resume:
         model.off_sweaty()
-    if opt.use_gpu:
+    if opt.device == 'cuda':
         model = model.cuda()
     loss = nn.MSELoss(reduction='sum')
     # loss = nn.BCELoss()
@@ -107,10 +112,10 @@ def create_model():
                                        ],
                                       lr=opt.lr,
                                       weight_decay=opt.weight_decay)
-    logger.debug(str(model))
-    logger.debug(str(loss))
-    logger.debug(str(optimizer_seq))
-    logger.debug(str(optimizer_both))
+    # logger.debug(str(model))
+    # logger.debug(str(loss))
+    # logger.debug(str(optimizer_seq))
+    # logger.debug(str(optimizer_both))
 
     return model, loss, optimizer_seq, optimizer_both
 

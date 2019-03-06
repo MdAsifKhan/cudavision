@@ -17,7 +17,7 @@ from arguments import opt
 from py_utils.logging_setup import path_logger, logger
 from py_dataset.seq_dataset import RealBallDataset
 from py_models import joined_model
-from py_utils.evaluator import ModelEvaluator
+from py_train.evaluator import ModelEvaluator
 from py_dataset.dataset import SoccerDataSet
 
 

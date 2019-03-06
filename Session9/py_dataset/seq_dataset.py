@@ -90,25 +90,33 @@ class RealBallDataset(Dataset):
         self.threshold = 0.7
         self._read_seq()
 
-
     def _read_seq(self):
         self.balls = {}
         self.ball_frames = []
         self.filenames = []
-        if self._small:
-            folder_name = 'balls_wo_zeros'
-        else:
-            folder_name = 'balls'
-        for filename in os.listdir(os.path.join(opt.seq_real_balls, folder_name)):
+        # if self._small:
+        #     folder_name = 'balls_wo_zeros'
+        # else:
+        folder_name = 'balls'
+        for filename in os.listdir(os.path.join(opt.data_root_seq, folder_name)):
             if 'ball' in filename:
                 # balls_files.append(os.path.join(opt.seq_real_balls, filename))
                 # ball_filename = os.path.join(opt.seq_real_balls, filename)
                 ball_idx = len(self.balls)
-                with open(os.path.join(opt.seq_real_balls, folder_name, filename), 'r') as f:
+                with open(os.path.join(opt.data_root_seq, folder_name, filename), 'r') as f:
                     ball = []
                     for line in f:
                         line = list(map(lambda x: int(x), line.split()))
-                        ball_filename = 'imageset_%d/frame%04d.jpg' % (line[0], line[1])
+                        # ball_filename = 'imageset_%d/frame%04d.jpg' % (line[0], line[1])
+                        ball_filename = 'SoccerData1/%s/' + 'frame%04d_imageset_%d.jpg' % (line[1], line[0])
+                        existance = False
+                        for subfolder in ['train_cnn', 'test_cnn']:
+                            if os.path.exists(ball_filename % subfolder):
+                                existance = True
+                                break
+                        ball_filename = ball_filename % subfolder
+                        if not existance:
+                            continue
                         ball_center = line[-2:]
                         ball.append([ball_filename, ball_center])
                         self.filenames.append(ball_filename)
@@ -133,7 +141,8 @@ class RealBallDataset(Dataset):
 
         seq = None
         for img_name in filenames:
-            img_path = os.path.join(self.dataroot, img_name)
+            # img_path = os.path.join(self.dataroot, img_name)
+            img_path = img_name
             img = Image.open(img_path)
 
             if self.transform:
@@ -159,6 +168,39 @@ class RealBallDataset(Dataset):
             y_r = opt.window_size if y + opt.window_size < opt.map_size_y else opt.map_size_y - y
             heatmap[x:x + x_r, y:y + y_r] = self.window[:x_r, :y_r]
         return seq, heatmap
+
+
+class NewDataset(Dataset):
+    def __init__(self, transform=None):
+        self.transform = transform
+
+        self.balls = []
+        for filename in os.listdir(opt.data_root):
+            if 'txt' not in filename:
+                continue
+            with open(os.path.join(opt.data_root, filename), 'r') as f:
+                for line in f:
+                    line = line.split()
+                    ball_filename = line[0]
+                    ball_numbers = list(map(lambda x: int(x), line[1:]))
+                    ball_center = ball_numbers[:2]
+                    ball_resolution = ball_numbers[2:]
+                    ball_center[0] = int(ball_center[0] * 120 / ball_resolution[0])
+                    ball_center[1] = int(ball_center[1] * 160 / ball_resolution[1])
+                    self.balls.append([ball_filename, ball_center])
+
+    def __len__(self):
+        return len(self.balls)
+
+    def __getitem__(self, idx):
+        filename, center = self.balls[idx]
+        img = Image.open(os.path.join(opt.data_root, filename))
+
+        map_size = (120, 160)
+        if self.transform:
+            img = self.transform(img)
+
+        return img, np.zeros(map_size, dtype=float),  center, os.path.join(opt.data_root, filename)
 
 
 if __name__ == '__main__':
