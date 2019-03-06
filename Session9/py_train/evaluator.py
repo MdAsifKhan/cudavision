@@ -154,13 +154,13 @@ class ModelEvaluator:
                 #         output[0,0] = 1
                 #         # output = output / np.max(output)
                 #         img = plt.imshow(output)
-                #         plt.savefig(os.path.join(opt.save_out, opt.model, '%s.png'%name))
+                #         plt.savefig(os.path.join(opt.save_out, opt.seq_model, '%s.png'%name))
                 #         plt.axis('off')
                 #         # out[0] = out[0] / np.max(out[0])
                 #         # plt.colorbar()
                 #         out[0][0, 0] = 1
                 #         img = plt.imshow(out[0])
-                #         plt.savefig(os.path.join(opt.save_out, opt.model, '%s_out.png'%name))
+                #         plt.savefig(os.path.join(opt.save_out, opt.seq_model, '%s_out.png'%name))
 
                 self.iter_loss_test.append(loss_)
                 batch_loss += loss_

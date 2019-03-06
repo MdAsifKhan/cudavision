@@ -30,7 +30,6 @@ vars_iter = list(vars(opt))
 for arg in sorted(vars_iter):
     logger.debug('%s: %s' % (arg, getattr(opt, arg)))
 
-opt.model = opt.seq_model
 
 # trainset = BallDataset(opt.seq_dataset)
 trainset = RealBallDataset(data_path=opt.seq_real_balls,

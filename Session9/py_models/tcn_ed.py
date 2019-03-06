@@ -110,8 +110,8 @@ def create_model():
 def test(dataloader, model, out=False):
     model.eval()
     model.to(opt.device)
-    dir_check(os.path.join(opt.save_out, opt.model))
-    dir_check(os.path.join(opt.save_out, opt.model, opt.suffix))
+    dir_check(os.path.join(opt.save_out, opt.seq_model))
+    dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
             if i % 50:
@@ -147,7 +147,7 @@ def test(dataloader, model, out=False):
                 tmp_img = np.concatenate((sweaty_out, horizontal_line, out23), axis=0)
                 img = np.concatenate((img, vertical_line, tmp_img), axis=1)
                 img = plt.imshow(img)
-                plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'out%d.png' % i))
+                plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'out%d.png' % i))
             else:
                 data = data.to('cpu').numpy().squeeze()[-3:]
                 d_v_l = np.ones((3, data.shape[2], 5)) * color
@@ -159,10 +159,10 @@ def test(dataloader, model, out=False):
                 data = data.transpose(1, 2, 0)
                 plt.axis('off')
                 data = plt.imshow(data)
-                plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'hist%d.png' % i))
+                plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'hist%d.png' % i))
                 plt.axis('off')
                 tmp_img = plt.imshow(tmp_img)
-                plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'real.gt.pr.%d.png' % i))
+                plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'real.gt.pr.%d.png' % i))
 
 
 

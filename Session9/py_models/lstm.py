@@ -43,8 +43,8 @@ def test(dataloader, model, out=False):
     idx = 0
     model.eval()
     model.to(opt.device)
-    dir_check(os.path.join(opt.save_out, opt.model))
-    dir_check(os.path.join(opt.save_out, opt.model, opt.suffix))
+    dir_check(os.path.join(opt.save_out, opt.seq_model))
+    dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
             if i % 50:
@@ -82,7 +82,7 @@ def test(dataloader, model, out=False):
             tmp_img = np.concatenate((sweaty_out, horizontal_line, out23), axis=0)
             img = np.concatenate((img, vertical_line, tmp_img), axis=1)
             img = plt.imshow(img)
-            plt.savefig(os.path.join(opt.save_out, opt.model, opt.suffix, 'out%d.png' % i))
+            plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'out%d.png' % i))
 
 
 
