@@ -81,6 +81,7 @@ if opt.dataset == 'provided':
             # opt.seq_both_resume_str = 'model/lstm.big.scr._lr_0.0001_opt_adam_epoch_%d' % d
         eval_data1(testloader_data1)
 
+        logger.debug('saving some visualization in seq_output folder...')
         testloader_data2 = data2()
         eval_data2(testloader_data2)
 

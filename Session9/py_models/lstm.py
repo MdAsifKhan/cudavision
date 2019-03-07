@@ -47,7 +47,7 @@ def test(dataloader, model, out=False):
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
-            if i % 50:
+            if i % 100:
                 continue
 
             data = data.float().squeeze()
