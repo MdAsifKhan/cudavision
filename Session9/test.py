@@ -34,24 +34,24 @@ if opt.dataset == 'provided':
     testloader_data1 = data1()
     if opt.reproduce == 'all':
 
-        for sweaty_net in [1, 2, 3]:
-            for sweaty_dp in [0, 3, 5]:
+        for sweaty_dp in [0, 3, 5]:
+            for sweaty_net in [1, 2, 3]:
                 sweaty_model = sweaty_model_template % (sweaty_net, sweaty_dp)
                 opt.drop_p = sweaty_dp * 0.1
                 opt.net = 'net%d' % sweaty_net
-                if sweaty_net == 3 and sweaty_dp == 5:
-                    continue
 
                 opt.seq_both_resume = False
                 opt.sweaty_resume_str = sweaty_model
                 opt.seq_resume = False
                 eval_data1(testloader_data1)
 
+        sequential_models = [
+            'lstm.real.scr.30',
+            'lstm.real.ft.20',
+            'tcn.real.scr.30',
+            'tcn.real.ft.20'
+        ]
 
-        sequential_models = ['lstm.real.ft.20',
-                             'lstm.real.scr.30',
-                             'tcn.real.ft.20',
-                             'tcn.real.scr.30']
         opt.seq_both_resume = True
         opt.net = 'net1'
         for model_name in sequential_models:
