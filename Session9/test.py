@@ -19,6 +19,8 @@ from py_utils.logging_setup import path_logger, logger
 from py_train.test_finetuned import data1, data2, eval_data1, eval_data2
 from py_dataset.seq_dataset import NewDataset
 
+from py_utils.util_functions import dir_check
+
 path_logger()
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
@@ -85,7 +87,8 @@ if opt.dataset == 'provided':
         testloader_data2 = data2()
         eval_data2(testloader_data2)
 
-if opt.dataset == 'new':
+if 'new' in opt.dataset:
+    opt.suffix = 'new_dataset'
     newdataset = NewDataset(transform=transforms.Compose([
                                 transforms.ColorJitter(brightness=0.3,
                                                        contrast=0.4, saturation=0.4),
@@ -105,7 +108,16 @@ if opt.dataset == 'new':
     opt.seq_both_resume_str = 'model/both/lstm.real.ft.20'
     opt.seq_model = 'lstm'
     opt.seq_predict = 2
+    dir_check(os.path.join(opt.save_out, opt.seq_model))
+    dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     eval_data1(testloader)
+    if opt.dataset == 'new_seq':
+        testloader = torch.utils.data.DataLoader(newdataset,
+                                                 batch_size=20,
+                                                 shuffle=False,
+                                                 num_workers=opt.workers,
+                                                 drop_last=False)
+        eval_data2(testloader)
 
 
 

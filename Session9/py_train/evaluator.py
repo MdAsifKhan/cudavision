@@ -108,7 +108,7 @@ class ModelEvaluator:
         with torch.no_grad():
             batch_loss = 0
             for idx, (test_data, test_labels, actual_centers, path) in enumerate(testloader):
-                if opt.dataset == 'new':
+                if 'new' in opt.dataset:
                     centers = []
                     for x, y in zip(actual_centers[0], actual_centers[1]):
                         centers.append((x, y))
@@ -142,7 +142,7 @@ class ModelEvaluator:
                     img = plt.imshow(output)
                     dir_check(opt.save_out)
                     dir_check(os.path.join(opt.save_out, opt.seq_model))
-                    plt.savefig(os.path.join(opt.save_out, opt.seq_model, '%d_new_data.png'%n))
+                    plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, '%d_sweaty_output.png'%n))
 
 
                 # for p in path:

@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser()
 ###########################################
 # dataset
 # parser.add_argument('--dataset', required=False, help='soccer| balls | soccer_seq', default='soccer')
-parser.add_argument('--dataset', required=False, help='provided | new', default='provided')
+parser.add_argument('--dataset', required=False, help='provided | new', default='new')
 parser.add_argument('--data_root', required=False, help='root if the new data', default='testDataset')
 # parser.add_argument('--xml', required=False, help='test xml path', default=None)
 

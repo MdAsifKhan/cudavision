@@ -195,6 +195,7 @@ class NewDataset(Dataset):
     def __getitem__(self, idx):
         filename, center = self.balls[idx]
         img = Image.open(os.path.join(opt.data_root, filename))
+        # gt_map = np.zeros((120, 160), dtype=float)
 
         map_size = (120, 160)
         if self.transform:

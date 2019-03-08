@@ -46,11 +46,16 @@ def test(dataloader, model, out=False):
     dir_check(os.path.join(opt.save_out, opt.seq_model))
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     with torch.no_grad():
-        for i, (data, target) in enumerate(dataloader):
-            if i % 100:
-                continue
+        for i, data_item in enumerate(dataloader):
+            if 'new' in opt.dataset:
+                data, target, _, _ = data_item
+                data = data.float()
+            else:
+                if i % 100:
+                    continue
+                data, target = data_item
+                data = data.float().squeeze()
 
-            data = data.float().squeeze()
             target = target.float().numpy().squeeze()
             if opt.device == 'cuda':
                 data = data.cuda(non_blocking=True)
@@ -81,8 +86,15 @@ def test(dataloader, model, out=False):
                     img = np.concatenate((img, vertical_line, tmp_img), axis=1)
             tmp_img = np.concatenate((sweaty_out, horizontal_line, out23), axis=0)
             img = np.concatenate((img, vertical_line, tmp_img), axis=1)
-            img = plt.imshow(img)
-            plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'out%d.png' % i))
+            img_ = plt.imshow(img)
+            plt.text(1, -5, 'first row left: lstm prediction frame t \nfirst row middle: lstm prediction frame t+1 \nfirst row right: sweatynet output for t-1',
+                     # verticalalignment='bottom', horizontalalignment='right',
+                     color='green', fontsize=15)
+
+            plt.text(1, img.shape[0] + 65, 'second row left: target t\nsecond row middle: target t+1\nsecond row right: residual inf',
+                     # verticalalignment='bottom', horizontalalignment='right',
+                     color='green', fontsize=15)
+            plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, '%d_lstm_output.png' % i))
 
 
 
