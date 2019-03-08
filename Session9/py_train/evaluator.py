@@ -131,7 +131,7 @@ class ModelEvaluator:
                 FN += FN_test
                 TN += TN_test
 
-                if opt.dataset == 'new':
+                if 'new' in opt.dataset:
                     if opt.batch_size > 1:
                         path = path[0]
                         output = output[0]

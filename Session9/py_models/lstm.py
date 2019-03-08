@@ -98,6 +98,7 @@ def test(dataloader, model, out=False):
             plt.text(1, img.shape[0] + 80, 'second row left: target t\nsecond row middle: target t+1\nsecond row right: residual inf',
                      # verticalalignment='bottom', horizontalalignment='right',
                      color='green', fontsize=15)
+            plt.axis('off')
             plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, '%d_lstm_output.png' % i))
 
 
