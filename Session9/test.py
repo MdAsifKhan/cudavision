@@ -108,6 +108,7 @@ if 'new' in opt.dataset:
     opt.seq_both_resume_str = 'model/both/lstm.real.ft.20'
     opt.seq_model = 'lstm'
     opt.seq_predict = 2
+    dir_check(opt.save_out)
     dir_check(os.path.join(opt.save_out, opt.seq_model))
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     eval_data1(testloader)
