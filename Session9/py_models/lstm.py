@@ -45,14 +45,18 @@ def test(dataloader, model, out=False):
     model.to(opt.device)
     dir_check(os.path.join(opt.save_out, opt.seq_model))
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
+    saved = 0
     with torch.no_grad():
         for i, data_item in enumerate(dataloader):
             if 'new' in opt.dataset:
                 data, target, _, _ = data_item
                 data = data.float()
             else:
-                if i % 100:
+                if i % 25:
                     continue
+                saved += 1
+                if saved == 5:
+                    break
                 data, target = data_item
                 data = data.float().squeeze()
 
@@ -91,7 +95,7 @@ def test(dataloader, model, out=False):
                      # verticalalignment='bottom', horizontalalignment='right',
                      color='green', fontsize=15)
 
-            plt.text(1, img.shape[0] + 65, 'second row left: target t\nsecond row middle: target t+1\nsecond row right: residual inf',
+            plt.text(1, img.shape[0] + 80, 'second row left: target t\nsecond row middle: target t+1\nsecond row right: residual inf',
                      # verticalalignment='bottom', horizontalalignment='right',
                      color='green', fontsize=15)
             plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, '%d_lstm_output.png' % i))
