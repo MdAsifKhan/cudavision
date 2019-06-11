@@ -104,3 +104,14 @@ class AverageLength(object):
     def __call__(self, *args, **kwargs):
         return int(self._total_length / self._nmb_of_sgmts)
 
+
+def f1(line):
+    line  = line.split(' ')
+    tp = int(line[1])
+    fp = int(line[3])
+    tn = int(line[5])
+    fn = int(line[7])
+    pr = tp / (tp + fp)
+    rc = tp / (tp + fn)
+    f1 = 2 * (pr * rc) / (pr + rc)
+    print('precision: %f\nrecall: %f\nf1: %f' % (pr, rc, f1))

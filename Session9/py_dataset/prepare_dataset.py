@@ -64,10 +64,10 @@ def prepare_dataset(dataroot, annotation_file):
 
 if __name__=='__main__':
 
-    dataroot = '../Session9/data/'
-    annotation_file1 = 'imageset_430.txt'
+    dataroot = '../SoccerDataMulti/'
+    annotation_file1 = 'export_ball_1508.txt'
     prepare_dataset(dataroot, annotation_file1)
-    annotation_file2 = 'imageset_431.txt'
-    prepare_dataset(dataroot, annotation_file2)
-    annotation_file3 = 'imageset_432.txt'
-    prepare_dataset(dataroot, annotation_file3)
+    # annotation_file2 = 'imageset_431.txt'
+    # prepare_dataset(dataroot, annotation_file2)
+    # annotation_file3 = 'imageset_432.txt'
+    # prepare_dataset(dataroot, annotation_file3)

@@ -52,11 +52,11 @@ def test(dataloader, model, out=False):
                 data, target, _, _ = data_item
                 data = data.float()
             else:
-                if i % 25:
+                if i % 10:
                     continue
                 saved += 1
-                if saved == 5:
-                    break
+                # if saved == 5:
+                #     break
                 data, target = data_item
                 data = data.float().squeeze()
 

@@ -26,6 +26,15 @@ class SoccerDataSet:
             self.min_radius = hf['min_radius'].value
             centers = list(hf['centers'].value)
 
+        if opt.dataset == 'multi':
+            centers1 = {}
+            centers2 = {}
+            for c_idx, c in enumerate(centers):
+                if c_idx % 2 == 1:
+                    centers1[c_idx // 2] = c
+                else:
+                    centers2[c_idx // 2] = c
+
         self.threshold = 0.7*targets.max()
         self.images, self.targets, self.centers = [], [], []
         self.filenames = [filename.decode('utf-8') for filename in self.filenames]
@@ -37,7 +46,12 @@ class SoccerDataSet:
                 if name in self.filenames:
                     idx = self.filenames.index(name)
                     self.targets.append(targets[idx])
-                    self.centers.append(centers[idx].astype('float32'))
+                    if opt.dataset == 'multi':
+                        centers = [centers1[idx].astype('float32')]
+                        centers.append(centers2[idx].astype('float32'))
+                        self.centers.append(centers)
+                    else:
+                        self.centers.append(centers[idx].astype('float32'))
                 else:
                     self.targets.append(np.zeros([120, 160], dtype='float32'))
                     self.centers.append(np.array([-1, -1], dtype='float32'))

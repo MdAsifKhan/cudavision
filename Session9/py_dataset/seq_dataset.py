@@ -170,6 +170,103 @@ class RealBallDataset(Dataset):
         return seq, heatmap
 
 
+class RealBallDatasetMulti(Dataset):
+    def __init__(self, data_path, transform=None, prediction=20, small=False):
+        self.dataroot = data_path
+        self.transform = transform
+        self._small = small
+        window = signal.gaussian(opt.window_size, std=3).reshape((-1, 1))
+        self.window = np.dot(window, window.T)
+
+        self.threshold = 0.7
+        if opt.dataset == 'multi':
+            self._read_seq_multi()
+        else:
+            self._read_seq()
+
+
+    def _read_seq_multi(self):
+        self.balls = {}
+        self.ball_frames = []
+        self.filenames = []
+        # if self._small:
+        #     folder_name = 'balls_wo_zeros'
+        # else:
+        folder_name = 'balls'
+        for filename in os.listdir(os.path.join(opt.data_root_seq, folder_name)):
+            if 'ball' in filename:
+                # balls_files.append(os.path.join(opt.seq_real_balls, filename))
+                # ball_filename = os.path.join(opt.seq_real_balls, filename)
+                ball_idx = len(self.balls)
+                with open(os.path.join(opt.data_root_seq, folder_name, filename), 'r') as f:
+                    ball = []
+                    for line in f:
+                        line = list(map(lambda x: int(x), line.split()))
+                        # ball_filename = 'imageset_%d/frame%04d.jpg' % (line[0], line[1])
+                        ball_filename = 'SoccerDataMulti/1508/frame%04d.jpg' % line[1]
+                        ball_center = line[-4:]
+                        ball.append([ball_filename, ball_center])
+                        self.filenames.append(ball_filename)
+                    self.balls[ball_idx] = ball
+                    for i in range(opt.hist, len(ball) - opt.seq_predict):
+                        self.ball_frames.append([ball_idx, i])
+
+    def __len__(self):
+        return len(self.ball_frames)
+
+    def __getitem__(self, idx):
+        ball_idx, iframe = self.ball_frames[idx]
+        filenames = []
+        # predict next coordinate of the ball
+        frame = iframe
+        _, gt_centers = self.balls[ball_idx][frame]
+        # collect sequence of the data back from the past
+        while frame and len(filenames) != opt.hist:
+            frame -= 1
+            fn, _ = self.balls[ball_idx][frame]
+            filenames.append(fn)
+
+        seq = None
+        for img_name in filenames:
+            # img_path = os.path.join(self.dataroot, img_name)
+            img_path = img_name
+            img = Image.open(img_path)
+
+            if self.transform:
+                img = self.transform(img).view(1, 3, 480, 640)
+            if seq is None:
+                seq = img
+            else:
+                seq = torch.cat((img, seq))
+        if len(filenames) < opt.hist:
+            raise IndexError
+        if opt.seq_predict > 1:
+            heatmap = np.zeros((opt.seq_predict, opt.map_size_x, opt.map_size_y), dtype=np.float32)
+            for idx in range(opt.seq_predict):
+                _, (x,y, x2, y2) = self.balls[ball_idx][frame]
+                x_r = opt.window_size if x + opt.window_size < opt.map_size_x else abs(opt.map_size_x - x)
+                y_r = opt.window_size if y + opt.window_size < opt.map_size_y else abs(opt.map_size_y - y)
+                heatmap[idx, x:x + x_r, y:y + y_r] = self.window[:x_r, :y_r]
+
+                if x2 != -1:
+                    x_r2 = opt.window_size if x2 + opt.window_size < opt.map_size_x else abs(opt.map_size_x - x2)
+                    y_r2 = opt.window_size if y2 + opt.window_size < opt.map_size_y else abs(opt.map_size_y - y2)
+                    heatmap[idx, x2:x2 + x_r2, y2:y2 + y_r2] = self.window[:x_r2, :y_r2]
+                frame += 1
+        else:
+            heatmap = np.zeros((opt.map_size_x, opt.map_size_y), dtype=np.float32)
+            x,y, x2, y2 = gt_centers
+            x_r = opt.window_size if x + opt.window_size < opt.map_size_x else opt.map_size_x - x
+            y_r = opt.window_size if y + opt.window_size < opt.map_size_y else opt.map_size_y - y
+            heatmap[x:x + x_r, y:y + y_r] = self.window[:x_r, :y_r]
+
+            if x2 != -1:
+                x_r2 = opt.window_size if x2 + opt.window_size < opt.map_size_x else abs(opt.map_size_x - x2)
+                y_r2 = opt.window_size if y2 + opt.window_size < opt.map_size_y else abs(opt.map_size_y - y2)
+                heatmap[x2:x2 + x_r2, y2:y2 + y_r2] = self.window[:x_r2, :y_r2]
+        return seq, heatmap
+
+
 class NewDataset(Dataset):
     def __init__(self, transform=None):
         self.transform = transform

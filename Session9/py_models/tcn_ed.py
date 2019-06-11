@@ -114,7 +114,7 @@ def test(dataloader, model, out=False):
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
-            if i % 100:
+            if i % 5:
                 continue
             data = data.float().squeeze()
             target = target.float().numpy().squeeze()
@@ -126,14 +126,15 @@ def test(dataloader, model, out=False):
             end = time.time()
             # logger.debug('time: %s' % str(end - start))
             img = None
-            color = np.max(output)
+            color = 0.5
             if len(output.shape) == 2:
                 output = output[np.newaxis, :]
                 target = target[np.newaxis, :]
-            horizontal_line = np.ones((5, output[0].shape[1])) * color
-            vertical_line = np.ones((2 * output[0].shape[0] + 5, 5)) * color
+            horizontal_line = np.ones((3, output[0].shape[1])) * color
+            vertical_line = np.ones((2 * output[0].shape[0] + 3, 3)) * color
             sweaty_out, out23 = model.test(data, ret_out23=True)
             sweaty_out = sweaty_out.cpu().numpy()[-1]
+            sweaty_out = sweaty_out / np.max(sweaty_out)
             out23 = out23.cpu().numpy()[-1]
             out23 = out23 / np.max(out23)
             if not out:
@@ -149,14 +150,17 @@ def test(dataloader, model, out=False):
                 img = plt.imshow(img)
                 plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'out%d.png' % i))
             else:
-                data = data.to('cpu').numpy().squeeze()[-3:]
-                d_v_l = np.ones((3, data.shape[2], 5)) * color
-                data = np.concatenate((data[0], d_v_l, data[1], d_v_l, data[2]), axis=2)
-                d_v_l = np.ones((out23.shape[0], 5)) * color
+                data = data.to('cpu').numpy().squeeze()[-1:]
+                d_v_l = np.ones((3, data.shape[2], 3)) * color
+                # data = np.concatenate((data[0], d_v_l, data[1], d_v_l, data[2]), axis=2)
+                d_v_l = np.ones((out23.shape[0], 3)) * color
+                target[-1] = target[-1] / np.max(target[-1])
+                output[-1] = output[-1] / np.max(output[-1])
+                # tmp_img = np.concatenate((sweaty_out, d_v_l, out23, d_v_l, target[-1], d_v_l, output[-1]), axis=1)
                 tmp_img = np.concatenate((out23, d_v_l, target[-1], d_v_l, output[-1]), axis=1)
                 # horizontal_line = np.ones((5, data.shape[0])) * color
                 # img = np.concatenate((data, horizontal_line, tmp_img), axis=0)
-                data = data.transpose(1, 2, 0)
+                data = data.squeeze().transpose(1, 2, 0)
                 plt.axis('off')
                 data = plt.imshow(data)
                 plt.savefig(os.path.join(opt.save_out, opt.seq_model, opt.suffix, 'hist%d.png' % i))

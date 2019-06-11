@@ -8,12 +8,15 @@ __date__ = 'January 2019'
 
 import torch
 import torch.nn as nn
+import time
+import numpy as np
 
 from arguments import opt
 from py_models.model import SweatyNet1, SweatyNet2, SweatyNet3
 from py_models.lstm import LSTM
 from py_utils.logging_setup import logger
 from py_models.tcn_ed import TCN_ED
+from py_models.gru import GRU
 
 def init_weights(m):
     if type(m) == nn.Conv1d:
@@ -29,6 +32,7 @@ class Weight(nn.Module):
 class JoinedModel(nn.Module):
     def __init__(self):
         super(JoinedModel, self).__init__()
+        self.timea = []
         if opt.net == 'net1':
             self.sweaty = SweatyNet1(1, opt.drop_p, finetune=True)
         if opt.net == 'net2':
@@ -36,11 +40,16 @@ class JoinedModel(nn.Module):
         if opt.net == 'net3':
             self.sweaty = SweatyNet3(1, opt.drop_p, finetune=True)
         if opt.seq_model == 'lstm':
+            opt.seq_predict = 2
             self.seq = LSTM()
         if opt.seq_model == 'tcn':
+            opt.seq_predict = 1
             n_nodes = [64, 96]
             self.seq = TCN_ED(n_nodes, opt.hist, opt.seq_predict, opt.ksize).to(opt.device)
             self.seq.apply(init_weights)
+        if opt.seq_model == 'gru':
+            opt.seq_predict = 1
+            self.seq = GRU()
             #
         self.conv1 = nn.Sequential(nn.Conv2d(112, 1, 7, padding=3),
                                    nn.BatchNorm2d(1),
@@ -55,11 +64,20 @@ class JoinedModel(nn.Module):
             x = x.view(-1, opt.hist, opt.map_size_x * opt.map_size_y)
         if opt.seq_model == 'lstm':
             x = x.view(-1, opt.hist, opt.map_size_x, opt.map_size_y)
+        if opt.seq_model == 'gru':
+            x = x.view(-1, opt.hist, opt.map_size_x, opt.map_size_y)
         x = self.seq(x)
         return x
 
     def test(self, x, ret_out23=False):
+        start = time.time()
         x, out23 = self.sweaty(x)
+        end = time.time()
+        # logger.debug('time: %s' % str(end - start))
+        self.timea.append(end-start)
+        if len(self.timea) == 10:
+            # logger.debug('average time %s' % str(np.mean(self.timea)))
+            self.timea = []
         if ret_out23:
             out23 = self.conv1(out23).squeeze()
             return x, out23

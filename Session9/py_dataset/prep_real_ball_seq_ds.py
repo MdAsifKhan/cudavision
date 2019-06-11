@@ -27,7 +27,7 @@ class Ball:
         self.valid = True
 
     def next_frame(self, x, y, frame):
-        if len(self.x) == 0 or abs(self.frames[-1] - frame) < 2:
+        if len(self.x) == 0 or abs(self.frames[-1] - frame) < 6:
             self.x.append(x)
             self.y.append(y)
             self.frames.append(frame)
@@ -56,7 +56,8 @@ class Ball:
 
 def create():
     balls = []
-    path = 'SoccerDataSeq'
+    # path = 'SoccerDataSeq'
+    path = '../SoccerDataMulti'
 
     def keyf(line):
         try:
@@ -81,7 +82,7 @@ def create():
                 frame = int(re.search(r'frame(\d*).jpg', line[1]).group(1))
                 # y,x = list(map(lambda x: int(x.split('.')[0]), line[-4:-2]))
                 y,x = list(map(lambda x: int(x), line[-8:-6]))
-                if not ball.next_frame(x, y, frame):
+                if not ball.next_frame(x, y, frame) or line_idx == len(lines) - 1:
                     if ball.valid:
                         balls.append(ball)
                     ball = Ball(filename)
@@ -90,5 +91,34 @@ def create():
         np.savetxt(os.path.join(save_path, 'ball%d.txt' % ball_idx), ball.centers(), fmt='%d')
 
 
+def reparse_multi():
+    balls = []
+    # path = 'SoccerDataSeq'
+    path = '../SoccerDataMulti'
+
+    for filename in os.listdir(os.path.join(path, 'balls')):
+        new_file = []
+        with open(os.path.join(path, 'balls', filename), 'r') as f:
+            lines = f.read().split('\n')[:-1]
+            pr_frame = 0
+            for line in lines:
+                line = list(map(lambda x: int(x), line.split()))
+                frame = line[1]
+                if frame == pr_frame:
+                    newline = new_file[-1] + [line[-2], line[-1]]
+                    new_file[-1] = newline
+                else:
+                    if pr_frame and len(new_file[-1]) == 4:
+                        new_file[-1] = new_file[-1] + [-1, -1]
+                    new_file.append(line)
+                    pr_frame = frame
+        if len(new_file[-1]) == 4:
+            new_file[-1] = new_file[-1] + [-1, -1]
+        new_file = np.array(new_file, dtype=int)
+        np.savetxt(os.path.join(save_path, filename), new_file, fmt='%d')
+
+
+
 if __name__ == '__main__':
     create()
+    reparse_multi()

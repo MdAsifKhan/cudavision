@@ -35,17 +35,30 @@ class ProbMap:
                 min_radius = 1200
                 for object_ in tree['annotation']['object']:
                     if object_['name']=='ball':
-                        bndbox = object_['bndbox']
+                        bndbox = object_['bndbox1']
                         xmin, ymin = int(bndbox['xmin'])/4, int(bndbox['ymin'])/4
                         xmax, ymax = int(bndbox['xmax'])/4, int(bndbox['ymax'])/4
                         center = np.array([(ymax+ymin)/2, (xmax+xmin)/2])
                         radius = min((xmax-xmin)/2, (ymax-ymin)/2)
                         min_radius = min(min_radius, radius)
                         prob_map_ = self.prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
+                        self.centers.append(center)
+                        try:
+                            bndbox = object_['bndbox2']
+                        except KeyError:
+                            self.centers.append(np.array([-1, -1]))
+                        else:
+                            xmin, ymin = int(bndbox['xmin']) / 4, int(bndbox['ymin']) / 4
+                            xmax, ymax = int(bndbox['xmax']) / 4, int(bndbox['ymax']) / 4
+                            center = np.array([(ymax + ymin) / 2, (xmax + xmin) / 2])
+                            radius = min((xmax - xmin) / 2, (ymax - ymin) / 2)
+                            min_radius = min(min_radius, radius)
+                            prob_map_ = self.prob_map(prob_map_, xmin, ymin, xmax, ymax, center, radius)
+                            self.centers.append(center)
 
                 self.prob_maps.append(prob_map_*100)
                 self.image_name.append(name)
-                self.centers.append(center)
+                # self.centers.append(center)
                 self.min_radius = min_radius
 
     def prob_map(self, prob_map_, xmin, ymin, xmax, ymax, center, radius=4):

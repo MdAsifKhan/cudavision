@@ -16,7 +16,7 @@ import random
 from arguments import opt
 from py_utils.logging_setup import path_logger, logger
 
-from py_train.test_finetuned import data1, data2, eval_data1, eval_data2
+from py_train.test_finetuned import data1, data2, eval_data1, eval_data2, data3, eval_data3, data_multi
 from py_dataset.seq_dataset import NewDataset
 
 from py_utils.util_functions import dir_check
@@ -31,6 +31,7 @@ for arg in sorted(vars_iter):
     logger.debug('%s: %s' % (arg, getattr(opt, arg)))
 
 if opt.dataset == 'provided':
+    opt.data_root_seq = 'SoccerDataSeq'
     sweaty_model_template = 'model/sweaty/Model_lr_0.001_opt_adam_epoch_100_net_net%d_drop_0.%d'
 
     testloader_data1 = data1()
@@ -51,7 +52,9 @@ if opt.dataset == 'provided':
             'lstm.real.scr.30',
             'lstm.real.ft.20',
             'tcn.real.scr.30',
-            'tcn.real.ft.20'
+            'tcn.real.ft.20',
+            'gru.real.ft.70',
+            'gru.real.scr.30'
         ]
 
         opt.seq_both_resume = True
@@ -62,6 +65,9 @@ if opt.dataset == 'provided':
                 opt.seq_predict = 2
             if 'tcn' in model_name:
                 opt.seq_model = 'tcn'
+                opt.seq_predict = 1
+            if 'gru' in model_name:
+                opt.seq_model = 'gru'
                 opt.seq_predict = 1
             opt.seq_both_resume_str = 'model/both/' + model_name
             eval_data1(testloader_data1)
@@ -76,16 +82,20 @@ if opt.dataset == 'provided':
 
         opt.seq_both_resume = True
         opt.seq_both_resume_str = 'model/both/lstm.real.ft.20'
-        opt.seq_model = 'lstm'
-        opt.seq_predict = 2
-        # for d in range(0, 50):
-            # opt.seq_both_resume_str = 'model/lstm.big.ft._lr_1e-05_opt_adam_epoch_%d' % d
-            # opt.seq_both_resume_str = 'model/lstm.big.scr._lr_0.0001_opt_adam_epoch_%d' % d
+        if 'lstm' in opt.seq_both_resume_str:
+            opt.seq_model = 'lstm'
+            opt.seq_predict = 2
+        if 'tcn' in opt.seq_both_resume_str:
+            opt.seq_model = 'tcn'
+            opt.seq_predict = 1
+        if 'gru' in opt.seq_both_resume_str:
+            opt.seq_model = 'gru'
+            opt.seq_predict = 1
         eval_data1(testloader_data1)
 
-        logger.debug('saving some visualization in seq_output folder...')
-        testloader_data2 = data2()
-        eval_data2(testloader_data2)
+        #logger.debug('saving some visualization in seq_output folder...')
+        #testloader_data2 = data2()
+        #eval_data2(testloader_data2)
 
 if 'new' in opt.dataset:
     opt.suffix = 'new_dataset'
@@ -120,6 +130,47 @@ if 'new' in opt.dataset:
                                                  drop_last=False)
         eval_data2(testloader)
 
+if opt.dataset == 'multi':
+    sweaty_model = 'model/sweaty/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.5'
+    opt.data_root_seq = 'SoccerDataMulti'
+    opt.drop_p = 0.5
+    opt.seq_both_resume = False
+    opt.sweaty_resume_str = sweaty_model
+    opt.seq_resume = False
+    # testloader_data_multi = data_multi()
+    # eval_data3(testloader_data_multi)
+
+    opt.seq_both_resume = True
+    opt.seq_both_resume_str = 'model/both/lstm.real.ft.20'
+    opt.seq_model = 'lstm'
+    opt.seq_predict = 2
+    test_data3 = data3()
+    # eval_data2(test_data3)
+
+    sequential_models = [
+        # 'lstm.real.scr.30',
+        # 'lstm.real.ft.20',
+        'tcn.real.scr.30',
+        'tcn.real.ft.20',
+        # 'gru.real.ft.70',
+        # 'gru.real.scr.30'
+    ]
+
+    opt.seq_both_resume = True
+    opt.net = 'net1'
+    for model_name in sequential_models:
+        opt.suffix = 'multi.%s' % model_name
+        if 'lstm' in model_name:
+            opt.seq_model = 'lstm'
+            opt.seq_predict = 2
+        if 'tcn' in model_name:
+            opt.seq_model = 'tcn'
+            opt.seq_predict = 1
+        if 'gru' in model_name:
+            opt.seq_model = 'gru'
+            opt.seq_predict = 1
+        opt.seq_both_resume_str = 'model/both/' + model_name
+        eval_data2(test_data3)
 
 
 

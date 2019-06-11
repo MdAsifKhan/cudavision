@@ -70,6 +70,9 @@ class ModelEvaluator:
             if opt.seq_model == 'tcn':
                 output = self.model(train_data)
                 loss = self.loss(output, train_labels)
+            if opt.seq_model == 'gru':
+                output = self.model(train_data)
+                loss = self.loss(output[-1], train_labels)
 
             losses.update(loss.item(), train_data.size(0))
 
@@ -196,10 +199,11 @@ class ModelEvaluator:
                 save_model = {'threshold': self.threshold,
                               'epoch': epoch,
                               'state_dict_model': self.model.state_dict()}
-                model_name = '{}_lr_{}_opt_{}_epoch_{}'.format(opt.seq_save_model,
-                                                               self.lr, self.optim, epoch)
-                model_dir = opt.model_root + '/' + model_name
-                torch.save(save_model, model_dir)
+                model_name = '{}_lr_{}_epoch_{}'.format(opt.seq_save_model,
+                                                        self.lr, epoch)
+                model_dir = '../' + opt.model_root + '/' + opt.seq_model
+                dir_check(model_dir)
+                torch.save(save_model, model_dir + '/' + model_name )
 
     def plot_loss(self):
         '''

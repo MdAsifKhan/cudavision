@@ -32,7 +32,7 @@ for arg in sorted(vars_iter):
 
 
 # trainset = BallDataset(opt.seq_dataset)
-trainset = RealBallDataset(data_path=opt.seq_real_balls,
+trainset = RealBallDataset(data_path=opt.data_root_seq,
                            transform=transforms.Compose([
                                # transforms.RandomResizedCrop(opt.input_size[1]),
                                # transforms.RandomHorizontalFlip(),
@@ -68,9 +68,9 @@ testloader = torch.utils.data.DataLoader(testset,
 opt.batch_size = opt.hist
 
 model, loss, optimizer_seq, optimizer_both = joined_model.create_model()
-model.resume_sweaty(os.path.abspath(opt.sweaty_resume_str))
+model.resume_sweaty(os.path.abspath('../' + opt.sweaty_resume_str))
 if opt.seq_resume:
-    model.resume_seq(os.path.abspath(opt.seq_resume_str))
+    model.resume_seq(os.path.abspath('../' + opt.seq_resume_str))
 
 modeleval = ModelEvaluator(model, threshold=5.0535, min_radius=2.625,
                            optim_seq=optimizer_seq,
