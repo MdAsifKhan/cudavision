@@ -35,7 +35,7 @@ class ProbMap:
                 min_radius = 1200
                 for object_ in tree['annotation']['object']:
                     if object_['name']=='ball':
-                        bndbox = object_['bndbox1']
+                        bndbox = object_['bndbox']
                         xmin, ymin = int(bndbox['xmin'])/4, int(bndbox['ymin'])/4
                         xmax, ymax = int(bndbox['xmax'])/4, int(bndbox['ymax'])/4
                         center = np.array([(ymax+ymin)/2, (xmax+xmin)/2])

@@ -45,14 +45,15 @@ def test(dataloader, model, out=False):
     dir_check(os.path.join(opt.save_out, opt.seq_model))
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
     saved = 0
+    time_log = [0., 0]
     with torch.no_grad():
         for i, data_item in enumerate(dataloader):
             if 'new' in opt.dataset:
                 data, target, _, _ = data_item
                 data = data.float()
             else:
-                if i % 10:
-                    continue
+                # if i % 10:
+                #     continue
                 saved += 1
                 # if saved == 5:
                 #     break
@@ -66,7 +67,14 @@ def test(dataloader, model, out=False):
             start = time.time()
             output = model(data)[-1]
             end = time.time()
-            # logger.debug('time: %s' % str(end - start))
+            if opt.reproduce == 'time':
+                time_log[0] += (end - start)
+                time_log[1] += 1
+                if time_log[1] == 10:
+                    logger.debug('time: %s' % str(time_log[0] / time_log[1]))
+                    return 
+                continue
+
             output = output[0].cpu().numpy().squeeze()
 
             img = None

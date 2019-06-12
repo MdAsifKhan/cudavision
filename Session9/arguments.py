@@ -92,7 +92,7 @@ parser.add_argument('--print_every', type=int, default=1, help='print checkpoint
 parser.add_argument('--save_every', type=int, default=1, help='model checkpoints')
 parser.add_argument('--manualSeed', type=int, default=42, help='manual seed')
 parser.add_argument('--model_root', default='model/', help='folder to output model checkpoints')
-parser.add_argument('--reproduce', default='best', help='best | all results to reproduce')
+parser.add_argument('--reproduce', default='time', help='best | all | time results to reproduce')
 
 
 

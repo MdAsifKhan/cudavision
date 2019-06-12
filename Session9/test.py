@@ -93,6 +93,31 @@ if opt.dataset == 'provided':
             opt.seq_predict = 1
         eval_data1(testloader_data1)
 
+    if opt.reproduce == 'time':
+        sweaty_model = 'model/sweaty/Model_lr_0.001_opt_adam_epoch_100_net_net1_drop_0.5'
+        opt.drop_p = 0.5
+        opt.seq_both_resume = True
+        sequential_models = [
+            'lstm.real.ft.20',
+            'tcn.real.ft.20',
+            'gru.real.scr.30'
+        ]
+        opt.net = 'net1'
+        for model_name in sequential_models:
+            if 'lstm' in model_name:
+                opt.seq_model = 'lstm'
+                opt.seq_predict = 2
+            if 'tcn' in model_name:
+                opt.seq_model = 'tcn'
+                opt.seq_predict = 1
+            if 'gru' in model_name:
+                opt.seq_model = 'gru'
+                opt.seq_predict = 1
+            opt.seq_both_resume_str = 'model/both/' + model_name
+            eval_data1(testloader_data1)
+
+
+
         #logger.debug('saving some visualization in seq_output folder...')
         #testloader_data2 = data2()
         #eval_data2(testloader_data2)

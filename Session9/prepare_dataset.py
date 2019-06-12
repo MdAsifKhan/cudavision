@@ -32,15 +32,15 @@ if opt.dataset == 'provided':
     print('SoccerData1 is ready')
 
     # if opt.dataset == 'balls':
-    data_root = 'toy.seq'
-    if not os.path.exists(data_root):
-        opt.balls_folder = data_root
-        opt.n_balls = 100
-        toy_seq.create()
-        opt.balls_folder = 'test.' + data_root
-        opt.n_balls = 100
-        toy_seq.create()
-    print('Artificial balls are ready')
+    # data_root = 'toy.seq'
+    # if not os.path.exists(data_root):
+    #     opt.balls_folder = data_root
+    #     opt.n_balls = 100
+    #     toy_seq.create()
+    #     opt.balls_folder = 'test.' + data_root
+    #     opt.n_balls = 100
+    #     toy_seq.create()
+    # print('Artificial balls are ready')
 
     # if opt.dataset == 'soccer_seq':
     data_root = 'SoccerDataSeq'

@@ -56,8 +56,8 @@ class Ball:
 
 def create():
     balls = []
-    # path = 'SoccerDataSeq'
-    path = '../SoccerDataMulti'
+    path = 'SoccerDataSeq'
+    # path = '../SoccerDataMulti'
 
     def keyf(line):
         try:

@@ -112,6 +112,7 @@ def test(dataloader, model, out=False):
     model.to(opt.device)
     dir_check(os.path.join(opt.save_out, opt.seq_model))
     dir_check(os.path.join(opt.save_out, opt.seq_model, opt.suffix))
+    time_log = [0., 0]
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
             if i % 5:
@@ -124,7 +125,13 @@ def test(dataloader, model, out=False):
             start = time.time()
             output = model(data).to('cpu').numpy().squeeze()
             end = time.time()
-            # logger.debug('time: %s' % str(end - start))
+            if opt.reproduce == 'time':
+                time_log[0] += (end - start)
+                time_log[1] += 1
+                if time_log[1] == 10:
+                    logger.debug('time: %s' % str(time_log[0] / time_log[1]))
+                    return
+                continue
             img = None
             color = 0.5
             if len(output.shape) == 2:
