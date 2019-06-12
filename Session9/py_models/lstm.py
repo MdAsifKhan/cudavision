@@ -53,8 +53,8 @@ def test(dataloader, model, out=False):
                 data, target, _, _ = data_item
                 data = data.float()
             else:
-                if i % 10:
-                    continue
+                #if i % 10:
+                #    continue
                 saved += 1
                 # if saved == 5:
                 #     break

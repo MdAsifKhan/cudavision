@@ -103,6 +103,7 @@ if opt.dataset == 'provided':
             'gru.real.scr.30'
         ]
         opt.net = 'net1'
+        testloader_data2 = data2()
         for model_name in sequential_models:
             if 'lstm' in model_name:
                 opt.seq_model = 'lstm'
@@ -114,7 +115,7 @@ if opt.dataset == 'provided':
                 opt.seq_model = 'gru'
                 opt.seq_predict = 1
             opt.seq_both_resume_str = 'model/both/' + model_name
-            eval_data1(testloader_data1)
+            eval_data2(testloader_data2)
 
 
 

@@ -115,8 +115,8 @@ def test(dataloader, model, out=False):
     time_log = [0., 0]
     with torch.no_grad():
         for i, (data, target) in enumerate(dataloader):
-            if i % 5:
-                continue
+            #if i % 5:
+            #    continue
             data = data.float().squeeze()
             target = target.float().numpy().squeeze()
             if opt.device == 'cuda':
