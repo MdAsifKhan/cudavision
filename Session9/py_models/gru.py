@@ -70,8 +70,8 @@ def test(dataloader, model, out=False):
             if opt.reproduce == 'time':
                 time_log[0] += (end - start)
                 time_log[1] += 1
-                if time_log[1] == 10:
-                    logger.debug('time: %s' % str(time_log[0] / time_log[1]))
+                if time_log[1] == 100:
+                    #logger.debug('time: %s' % str(time_log[0] / time_log[1]))
                     return 
                 continue
 

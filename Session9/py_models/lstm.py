@@ -20,9 +20,15 @@ class LSTM(nn.Module):
                               kernel_size=5,
                               step=5,
                               effective_step=[4])
+        self.time_log = [0.0, 0]
 
     def forward(self, x):
+        start = time.time()
         x = self.clstm(x)
+        end = time.time()
+        self.time_log[0] += (end - start)
+        self.time_log[1] += 2
+        #logger.debug('time %s' % (time.time() - start))
         return x
 
 
@@ -71,8 +77,10 @@ def test(dataloader, model, out=False):
             if opt.reproduce == 'time':
                 time_log[0] += (end - start)
                 time_log[1] += 1
-                if time_log[1] == 10:
-                    logger.debug('time: %s' % str(time_log[0] / time_log[1]))
+                if time_log[1] == 100:
+                    #model.time_out()
+
+                    #logger.debug('time: %s' % str(time_log[0] / time_log[1]))
                     return
                 continue
             output = output[0].cpu().numpy().squeeze()

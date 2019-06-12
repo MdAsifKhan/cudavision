@@ -16,7 +16,7 @@ parser.add_argument('--data_root', required=False, help='root if the new data', 
 parser.add_argument('--lr', default=1e-6, type=float)
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--weight_decay', default=1e-3, help='regularization constant for l_2 regularizer of W')
-parser.add_argument('--batch_size', type=int, default=5, help='input batch size')
+parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
 parser.add_argument('--nm_epochs', type=int, default=100, help='number of epochs for training')
 parser.add_argument('--drop_p', type=float, default=0.5, help='Dropout Probability')
 

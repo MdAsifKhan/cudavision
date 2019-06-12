@@ -66,7 +66,14 @@ class JoinedModel(nn.Module):
             x = x.view(-1, opt.hist, opt.map_size_x, opt.map_size_y)
         if opt.seq_model == 'gru':
             x = x.view(-1, opt.hist, opt.map_size_x, opt.map_size_y)
+        start = time.time()
         x = self.seq(x)
+        end = time.time()
+        #logger.debug('time again: %s' % (end - start))
+        self.timea.append(end-start)
+        if len(self.timea) == 10:
+            logger.debug('average time per 10 images %s' % str(np.mean(self.timea)))
+            self.timea = []
         return x
 
     def test(self, x, ret_out23=False):
@@ -75,7 +82,7 @@ class JoinedModel(nn.Module):
         end = time.time()
         # logger.debug('time: %s' % str(end - start))
         self.timea.append(end-start)
-        if len(self.timea) == 10:
+        if len(self.timea) == 30:
             # logger.debug('average time %s' % str(np.mean(self.timea)))
             self.timea = []
         if ret_out23:
