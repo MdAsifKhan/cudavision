@@ -57,7 +57,9 @@ class JoinedModel(nn.Module):
         self.alpha = Weight()
 
     def forward(self, x):
+        start = time.time()
         x, out23 = self.sweaty(x)
+        end = time.time()
         out23 = self.alpha.multp * self.conv1(out23).squeeze()
         x = x + out23
         if opt.seq_model == 'tcn':
@@ -66,9 +68,9 @@ class JoinedModel(nn.Module):
             x = x.view(-1, opt.hist, opt.map_size_x, opt.map_size_y)
         if opt.seq_model == 'gru':
             x = x.view(-1, opt.hist, opt.map_size_x, opt.map_size_y)
-        start = time.time()
+        #start = time.time()
         x = self.seq(x)
-        end = time.time()
+        #end = time.time()
         #logger.debug('time again: %s' % (end - start))
         self.timea.append(end-start)
         if len(self.timea) == 10:

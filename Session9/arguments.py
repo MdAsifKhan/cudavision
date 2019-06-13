@@ -87,7 +87,7 @@ parser.add_argument('--save_out', default='seq_output',
 parser.add_argument('--device', default='cuda')
 parser.add_argument('--suffix', default='tcn.save')
 parser.add_argument('--seq_predict', default=1, type=int)
-parser.add_argument('--seq_model', default='gru', help='lstm | tcn | gru')
+parser.add_argument('--seq_model', default='tcn', help='lstm | tcn | gru')
 parser.add_argument('--print_every', type=int, default=1, help='print checkpoints')
 parser.add_argument('--save_every', type=int, default=1, help='model checkpoints')
 parser.add_argument('--manualSeed', type=int, default=42, help='manual seed')
